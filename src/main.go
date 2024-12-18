@@ -38,7 +38,7 @@ func interpret(raw[]string) {
 	for i := 0; i < len(raw); i++ {
 		length := len(stack);
 		/* Conditional looping */
-		if (skip_to_end) {
+		if (skip_to_end && raw[i] != "end") {
 			continue;
 		}
 		number, err = strconv.Atoi(raw[i]);
