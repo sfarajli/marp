@@ -83,6 +83,7 @@ func interpret(raw[]string) {
 			if (stack[length - 1] == 0) {
 				skip_to_end = true;
 			}
+			stack = stack[:length - 1];
 		case "end":
 			skip_to_end = false;
 
