@@ -33,9 +33,14 @@ func interpret(raw[]string) {
 	var err error;
 	var number int;
 	var stack[]int;
+	var skip_to_end bool;
 
 	for i := 0; i < len(raw); i++ {
 		length := len(stack);
+		/* Conditional looping */
+		if (skip_to_end) {
+			continue;
+		}
 		number, err = strconv.Atoi(raw[i]);
 		if err == nil {
 			stack = append(stack, number);
@@ -55,12 +60,32 @@ func interpret(raw[]string) {
 			}
 			stack[length - 2] = stack[length - 1] - stack[length - 2]
 			stack = stack[:length - 1];
+		case "=":
+			if length < 2 {
+				panic("failed to check equality: stack underflow");
+			}
+			if (stack[length - 1] == stack[length - 2]) {
+				stack = append(stack, -1);
+			} else {
+				stack = append(stack, 0);
+			}
+
 		case ".":
 			if length < 1 {
 				panic("failed to dump: stack underflow");
 			}
 			fmt.Println(stack[length - 1]);
 			stack = stack[:length - 1];
+		case "if":
+			if length < 1 {
+				panic("failed to if: stack underflow");
+			}
+			if (stack[length - 1] == 0) {
+				skip_to_end = true;
+			}
+		case "end":
+			skip_to_end = false;
+
 		default:
 			panic("invalid word");
 		}
