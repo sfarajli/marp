@@ -10,7 +10,7 @@ import (
 func readfile(path string) []string {
 
 	var raw []string;
-	reg := regexp.MustCompile(" |\n")
+	reg := regexp.MustCompile(`\s`)
 
 	dat, err := os.ReadFile(path);
 	if (err != nil) {
