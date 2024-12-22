@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"regexp"
 	"os"
-) 
+)
 
 func readfile(path string) []string {
 
@@ -23,7 +23,7 @@ func readfile(path string) []string {
 	for i := range tmp{
 		if tmp[i] != "" {
 			raw = append(raw, tmp[i]);
-		} 
+		}
 	};
 
 	return raw;
@@ -44,7 +44,7 @@ func interpret(raw[]string) {
 		number, err = strconv.Atoi(raw[i]);
 		if err == nil {
 			stack = append(stack, number);
-			continue; 
+			continue;
 		}
 
 		switch raw[i] {
@@ -90,7 +90,7 @@ func interpret(raw[]string) {
 		default:
 			panic("invalid word");
 		}
-	} 
+	}
 }
 
 func main() {
