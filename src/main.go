@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"os"
 )
 
@@ -18,7 +19,6 @@ func readfile(path string) []string {
 		panic("failed to read file");
 	}
 
-	/* FIXME: Find a better solution */
 	tmp := reg.Split(string(dat), -1);
 
 	for i := range tmp{
@@ -31,12 +31,116 @@ func readfile(path string) []string {
 }
 
 func compile(raw[]string) {
-	print("section .text")
-	print("global _start")
+	print("dump:");
+	print("		push    rbp");
+	print("		mov     rbp, rsp");
+	print("		sub     rsp, 48");
+	print("		mov     DWORD  [rbp-36], edi");
+	print("		mov     QWORD  [rbp-32], 0");
+	print("		mov     QWORD  [rbp-24], 0");
+	print("		mov     DWORD  [rbp-16], 0");
+	print("		mov     BYTE  [rbp-13], 10");
+	print("		mov     DWORD  [rbp-4], 18");
+	print("		mov     DWORD  [rbp-8], 0");
+	print("		cmp     DWORD  [rbp-36], 0");
+	print("		jns     .L3");
+	print("		neg     DWORD  [rbp-36]");
+	print("		mov     DWORD  [rbp-8], 1");
+	print("		.L3:");
+	print("		mov     edx, DWORD  [rbp-36]");
+	print("		movsx   rax, edx");
+	print("		imul    rax, rax, 1717986919");
+	print("		shr     rax, 32");
+	print("		mov     ecx, eax");
+	print("		sar     ecx, 2");
+	print("		mov     eax, edx");
+	print("		sar     eax, 31");
+	print("		sub     ecx, eax");
+	print("		mov     eax, ecx");
+	print("		sal     eax, 2");
+	print("		add     eax, ecx");
+	print("		add     eax, eax");
+	print("		sub     edx, eax");
+	print("		mov     DWORD  [rbp-12], edx");
+	print("		mov     eax, DWORD  [rbp-12]");
+	print("		add     eax, 48");
+	print("		mov     edx, eax");
+	print("		mov     eax, DWORD  [rbp-4]");
+	print("		cdqe");
+	print("		mov     BYTE  [rbp-32+rax], dl");
+	print("		mov     eax, DWORD  [rbp-12]");
+	print("		sub     DWORD  [rbp-36], eax");
+	print("		mov     eax, DWORD  [rbp-36]");
+	print("		movsx   rdx, eax");
+	print("		imul    rdx, rdx, 1717986919");
+	print("		shr     rdx, 32");
+	print("		mov     ecx, edx");
+	print("		sar     ecx, 2");
+	print("		cdq");
+	print("		mov     eax, ecx");
+	print("		sub     eax, edx");
+	print("		mov     DWORD  [rbp-36], eax");
+	print("		sub     DWORD  [rbp-4], 1");
+	print("		cmp     DWORD  [rbp-36], 0");
+	print("		jne     .L3");
+	print("		cmp     DWORD  [rbp-8], 0");
+	print("		je      .L4");
+	print("		mov     eax, DWORD  [rbp-4]");
+	print("		cdqe");
+	print("		mov     BYTE  [rbp-32+rax], 45");
+	print("		sub     DWORD  [rbp-4], 1");
+	print("		.L4:");
+	print("		mov     eax, 20");
+	print("		sub     eax, DWORD  [rbp-4]");
+	print("		cdqe");
+	print("		mov     edx, DWORD  [rbp-4]");
+	print("		movsx   rdx, edx");
+	print("		lea     rcx, [rbp-32]");
+	print("		add     rcx, rdx");
+	print("		mov     rdx, rax");
+	print("		mov     rsi, rcx");
+	print("		mov     edi, 1");
+	print("		mov 	rax, 1");
+	print("		syscall");
+	print("		nop");
+	print("		leave");
+	print("		ret")
+
+	print("		section .text")
+	print("		global _start")
 	print("_start:")
-	print("mov rdi, 0")
-	print("mov rax, 60")
-	print("syscall")
+
+	for i := 0; i < len(raw); i++ {
+		number, err := strconv.Atoi(raw[i]);
+		if err == nil {
+			print("		;; PUSHING TO STACK")
+			print("		push", number);
+		}
+
+		switch raw[i] {
+		case "+":
+			print("		;; PLUS")
+			print("		pop, rsi")
+			print("		pop, rax")
+			print("		add rax, rsi")
+			print("		push rax")
+		case "-":
+			print("		;; MINUS")
+			print("		pop, rsi")
+			print("		pop, rax")
+			print("		sub rax, rsi")
+			print("		push rax")
+		case ".":
+			print("		;; DUMP")
+			print("		pop rdi")
+			print("		call dump")
+		}
+	}
+
+	print("		;; RETURN")
+	print("		mov rdi, 0")
+	print("		mov rax, 60")
+	print("		syscall")
 }
 
 func main() {
