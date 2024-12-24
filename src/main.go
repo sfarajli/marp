@@ -30,6 +30,7 @@ func readfile(path string) []string {
 	return raw;
 }
 
+var iflabel int;
 func compile(raw[]string) {
 
 	print("		section .text")
@@ -70,6 +71,15 @@ func compile(raw[]string) {
 			print("		cmp rsi, rax")
 			print("		cmove r10, r11")
 			print("		push r10")
+		case "if":
+			print("		;; IF")
+			print("		pop r10")
+			print("		cmp r10, 0")
+			fmt.Printf("		je .if%d\n",iflabel)
+
+		case "endif":
+			fmt.Printf(".if%d:\n",iflabel)
+			iflabel++
 		default:
 			panic("invalid word")
 		}
