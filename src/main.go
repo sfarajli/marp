@@ -31,7 +31,57 @@ func readfile(path string) []string {
 }
 
 func compile(raw[]string) {
-	print("dump:");
+
+	print("		section .text")
+	print("		global _start")
+	print("_start:")
+
+	for i := 0; i < len(raw); i++ {
+		number, err := strconv.Atoi(raw[i]);
+		if err == nil {
+			print("		;; PUSHING TO STACK")
+			print("		push", number);
+			continue;
+		}
+
+		switch raw[i] {
+		case "+":
+			print("		;; PLUS")
+			print("		pop rsi")
+			print("		pop rax")
+			print("		add rax, rsi")
+			print("		push rax")
+		case "-":
+			print("		;; MINUS")
+			print("		pop rsi")
+			print("		pop rax")
+			print("		sub rax, rsi")
+			print("		push rax")
+		case ".":
+			print("		;; DUMP")
+			print("		pop rdi")
+			print("		call .dump")
+		case "=":
+			print("		;; EQUAL")
+			print("		mov r10, 0")
+			print("		mov r11,  1")
+			print("		pop rsi")
+			print("		pop rax")
+			print("		cmp rsi, rax")
+			print("		cmove r10, r11")
+			print("		push r10")
+		default:
+			panic("invalid word")
+		}
+
+	}
+
+	print("		;; RETURN")
+	print("		mov rdi, 0")
+	print("		mov rax, 60")
+	print("		syscall")
+
+	print(".dump:");
 	print("		push    rbp");
 	print("		mov     rbp, rsp");
 	print("		sub     rsp, 48");
@@ -105,42 +155,6 @@ func compile(raw[]string) {
 	print("		nop");
 	print("		leave");
 	print("		ret")
-
-	print("		section .text")
-	print("		global _start")
-	print("_start:")
-
-	for i := 0; i < len(raw); i++ {
-		number, err := strconv.Atoi(raw[i]);
-		if err == nil {
-			print("		;; PUSHING TO STACK")
-			print("		push", number);
-		}
-
-		switch raw[i] {
-		case "+":
-			print("		;; PLUS")
-			print("		pop, rsi")
-			print("		pop, rax")
-			print("		add rax, rsi")
-			print("		push rax")
-		case "-":
-			print("		;; MINUS")
-			print("		pop, rsi")
-			print("		pop, rax")
-			print("		sub rax, rsi")
-			print("		push rax")
-		case ".":
-			print("		;; DUMP")
-			print("		pop rdi")
-			print("		call dump")
-		}
-	}
-
-	print("		;; RETURN")
-	print("		mov rdi, 0")
-	print("		mov rax, 60")
-	print("		syscall")
 }
 
 func main() {
