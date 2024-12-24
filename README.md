@@ -1,5 +1,5 @@
 # gorth - go forth
-Simple [forth](https://www.forth.com/forth) compiler/interpreter implementation written in go.
+Simple [forth](https://www.forth.com/forth) compiler implementation written in go.
 
 ## Building
 ``` bash
