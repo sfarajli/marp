@@ -30,9 +30,8 @@ func readfile(path string) []string {
 	return raw;
 }
 
-var iflabel int;
 func compile(raw[]string) {
-
+	var iflabels[] int;
 	print("		section .text")
 	print("		global _start")
 	print("_start:")
@@ -75,11 +74,13 @@ func compile(raw[]string) {
 			print("		;; IF")
 			print("		pop r10")
 			print("		cmp r10, 0")
-			fmt.Printf("		je .if%d\n",iflabel)
+			fmt.Printf("		je .if%d\n",i)
+			iflabels = append(iflabels, i)
 
 		case "endif":
-			fmt.Printf(".if%d:\n",iflabel)
-			iflabel++
+			fmt.Printf(".if%d:\n", iflabels[len(iflabels) - 1] )
+			iflabels = iflabels[:len(iflabels) - 1]
+
 		default:
 			panic("invalid word")
 		}
