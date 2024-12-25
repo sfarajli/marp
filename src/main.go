@@ -32,8 +32,8 @@ func readfile(path string) []string {
 
 func compile(raw[]string) {
 	var iflabels[] int;
-	print("		section .text")
-	print("		global _start")
+	print("section .text")
+	print("global _start")
 	print("_start:")
 
 	for i := 0; i < len(raw); i++ {
@@ -84,10 +84,9 @@ func compile(raw[]string) {
 		default:
 			panic("invalid word")
 		}
-
 	}
 
-	print("		;; RETURN")
+	print("		;; EXIT")
 	print("		mov rdi, 0")
 	print("		mov rax, 60")
 	print("		syscall")
