@@ -22,7 +22,7 @@ func readfile(path string) []string {
 	tmp := reg.Split(string(dat), -1);
 
 	for i := range tmp{
-		if tmp[i] != "" {
+		if tmp[i] != "" && tmp[i][0] != '#' {
 			raw = append(raw, tmp[i]);
 		}
 	};
