@@ -20,9 +20,10 @@ func readfile(path string) []string {
 	}
 
 	tmp := reg.Split(string(dat), -1);
+	/* TODO: add comments */
 
 	for i := range tmp{
-		if tmp[i] != "" && tmp[i][0] != '#' {
+		if tmp[i] != "" {
 			raw = append(raw, tmp[i]);
 		}
 	};
