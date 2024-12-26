@@ -52,25 +52,49 @@ func compile(raw[]string) {
 			print("		pop rax")
 			print("		add rax, rsi")
 			print("		push rax")
+
 		case "-":
 			print("		;; MINUS")
 			print("		pop rsi")
 			print("		pop rax")
 			print("		sub rax, rsi")
 			print("		push rax")
-		case ".":
-			print("		;; DUMP")
-			print("		pop rdi")
-			print("		call .dump")
+
+		case ">":
+			print("		;; GREATER")
+			print("		mov r10, 0")
+			print("		mov r11, 1")
+			print("		pop rsi")
+			print("		pop rax")
+			print("		cmp rax, rsi")
+			print("		cmovg r10, r11")
+			print("		push r10")
+
+		case "<":
+			print("		;; LESS")
+			print("		mov r10, 0")
+			print("		mov r11, 1")
+			print("		pop rsi")
+			print("		pop rax")
+			print("		cmp rax, rsi")
+			print("		cmovl r10, r11")
+			print("		push r10")
+
 		case "=":
 			print("		;; EQUAL")
 			print("		mov r10, 0")
 			print("		mov r11,  1")
 			print("		pop rsi")
 			print("		pop rax")
-			print("		cmp rsi, rax")
+			print("		cmp rax, rsi")
 			print("		cmove r10, r11")
 			print("		push r10")
+
+		case ".":
+			print("		;; DUMP")
+			print("		pop rdi")
+			print("		call .dump")
+
 		case "if":
 			print("		;; IF")
 			print("		pop r10")
