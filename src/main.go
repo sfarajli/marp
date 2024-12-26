@@ -95,6 +95,12 @@ func compile(raw[]string) {
 			print("		pop rdi")
 			print("		call .dump")
 
+		case "dup":
+			print("		;; DUPLICATE")
+			print("		pop r10")
+			print("		push r10")
+			print("		push r10")
+
 		case "if":
 			print("		;; IF")
 			print("		pop r10")
