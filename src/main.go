@@ -32,6 +32,7 @@ func readfile(path string) []string {
 
 func compile(raw[]string) {
 	var iflabels[] int;
+	var looplabels[] int;
 	print("section .text")
 	print("global _start")
 	print("_start:")
@@ -88,6 +89,23 @@ func compile(raw[]string) {
 			print("		;; ENDIF")
 			fmt.Printf(".if%d:\n", iflabels[len(iflabels) - 1])
 			iflabels = iflabels[:len(iflabels) - 1]
+
+		case "while":
+			print("		;; WHILE")
+			fmt.Printf(".loop%d:\n", i);
+			looplabels = append(looplabels, i)
+
+		case "do":
+			print("		;; DO")
+			print("		pop r10")
+			print("		cmp r10, 0")
+			fmt.Printf("		je .endloop%d\n", looplabels[len(looplabels) - 1])
+
+		case "endloop":
+			print("		;; ENDLOOP")
+			fmt.Printf("		jmp .loop%d\n", looplabels[len(looplabels) - 1])
+			fmt.Printf(".endloop%d:\n", looplabels[len(looplabels) - 1])
+			looplabels = looplabels[:len(looplabels) - 1]
 
 		default:
 			panic("invalid word")
