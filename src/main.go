@@ -74,11 +74,19 @@ func compile(raw[]string) {
 			print("		;; IF")
 			print("		pop r10")
 			print("		cmp r10, 0")
-			fmt.Printf("		je .if%d\n",i)
+			fmt.Printf("		je .if%d\n", i)
+			iflabels = append(iflabels, i)
+
+		case "else":
+			print("		;; ELSE")
+			fmt.Printf("		jmp .if%d\n", i)
+			fmt.Printf(".if%d:\n", iflabels[len(iflabels) - 1])
+			iflabels = iflabels[:len(iflabels) - 1]
 			iflabels = append(iflabels, i)
 
 		case "endif":
-			fmt.Printf(".if%d:\n", iflabels[len(iflabels) - 1] )
+			print("		;; ENDIF")
+			fmt.Printf(".if%d:\n", iflabels[len(iflabels) - 1])
 			iflabels = iflabels[:len(iflabels) - 1]
 
 		default:
