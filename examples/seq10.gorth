@@ -1,0 +1,4 @@
+1 while dup 11 < do
+	dup .
+	1 +
+endloop
