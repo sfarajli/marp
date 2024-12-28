@@ -174,9 +174,14 @@ func compile(raw[]string) {
 			print("		syscall")
 
 		case "println":
-			/*printout the last element without poping it
-			the difference between dump is println also prints strings*/
-			panic("println: not implemented")
+			print("		;; PRINTLN")
+			print("		pop rsi")
+			print("		pop rdx")
+			print("		mov rdi, 1")
+			print("		mov rax, 1")
+			print("		syscall")
+			print("		push rsi")
+			print("		push rdx")
 
 		default:
 			panic("invalid word")
