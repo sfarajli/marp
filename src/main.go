@@ -180,8 +180,6 @@ func compile(raw[]string) {
 			print("		mov rdi, 1")
 			print("		mov rax, 1")
 			print("		syscall")
-			print("		push rsi")
-			print("		push rdx")
 
 		default:
 			panic("invalid word")
