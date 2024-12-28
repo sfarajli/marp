@@ -31,9 +31,27 @@ func readfile(path string) []string {
 	return raw;
 }
 
+func parseString(raw[] string, i int) (str string, strLen int, endIndex int) {
+	str = ""
+	for ;; i++ {
+		word := raw[i]
+		strLen += len(word)
+		str += word
+		if word[len(word) - 1] == '"' {
+			break;
+		}
+		str += " "
+		strLen++
+	}
+
+	return  str, strLen, i
+}
+
 func compile(raw[]string) {
-	var iflabels[] int;
-	var looplabels[] int;
+	var iflabels[] int
+	var looplabels[] int
+	var strings[][2] string
+
 	print("section .text")
 	print("global _start")
 	print("_start:")
@@ -42,7 +60,7 @@ func compile(raw[]string) {
 		number, err := strconv.Atoi(raw[i]);
 		if err == nil {
 			print("		;; PUSHING TO STACK")
-			print("		push", number);
+			print("		push", number)
 			continue;
 		}
 
@@ -137,12 +155,28 @@ func compile(raw[]string) {
 			fmt.Printf("		jmp .loop%d\n", looplabels[len(looplabels) - 1])
 			fmt.Printf(".endloop%d:\n", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
+
+		case "pushstr":
+			str, strLen, lastIndex := parseString(raw, i + 1)
+
+			print("		;; PUSHING STRING LENGTH")
+			fmt.Printf("		push %d\n", strLen)
+			print("		;; PUSHING STRING")
+			fmt.Printf("		push string_%d\n", i);
+			tmp := [2]string{str, fmt.Sprintf("string_%d", i)}
+			strings = append(strings, tmp)
+			i = lastIndex;
 		/* Functions */
 		case "exit":
-			print("		;; RETURN")
+			print("		;; EXIT")
 			print("		pop rdi")
 			print("		mov rax, 60")
 			print("		syscall")
+
+		case "println":
+			/*printout the last element without poping it
+			the difference between dump is println also prints strings*/
+			panic("println: not implemented")
 
 		default:
 			panic("invalid word")
@@ -154,80 +188,88 @@ func compile(raw[]string) {
 	print("		mov rax, 60")
 	print("		syscall")
 
+
 	print(".dump:");
-	print("		push    rbp");
-	print("		mov     rbp, rsp");
-	print("		sub     rsp, 48");
-	print("		mov     DWORD  [rbp-36], edi");
-	print("		mov     QWORD  [rbp-32], 0");
-	print("		mov     QWORD  [rbp-24], 0");
-	print("		mov     DWORD  [rbp-16], 0");
-	print("		mov     BYTE  [rbp-13], 10");
-	print("		mov     DWORD  [rbp-4], 18");
-	print("		mov     DWORD  [rbp-8], 0");
-	print("		cmp     DWORD  [rbp-36], 0");
-	print("		jns     .L3");
-	print("		neg     DWORD  [rbp-36]");
-	print("		mov     DWORD  [rbp-8], 1");
-	print("		.L3:");
-	print("		mov     edx, DWORD  [rbp-36]");
-	print("		movsx   rax, edx");
-	print("		imul    rax, rax, 1717986919");
-	print("		shr     rax, 32");
-	print("		mov     ecx, eax");
-	print("		sar     ecx, 2");
-	print("		mov     eax, edx");
-	print("		sar     eax, 31");
-	print("		sub     ecx, eax");
-	print("		mov     eax, ecx");
-	print("		sal     eax, 2");
-	print("		add     eax, ecx");
-	print("		add     eax, eax");
-	print("		sub     edx, eax");
-	print("		mov     DWORD  [rbp-12], edx");
-	print("		mov     eax, DWORD  [rbp-12]");
-	print("		add     eax, 48");
-	print("		mov     edx, eax");
-	print("		mov     eax, DWORD  [rbp-4]");
-	print("		cdqe");
-	print("		mov     BYTE  [rbp-32+rax], dl");
-	print("		mov     eax, DWORD  [rbp-12]");
-	print("		sub     DWORD  [rbp-36], eax");
-	print("		mov     eax, DWORD  [rbp-36]");
-	print("		movsx   rdx, eax");
-	print("		imul    rdx, rdx, 1717986919");
-	print("		shr     rdx, 32");
-	print("		mov     ecx, edx");
-	print("		sar     ecx, 2");
-	print("		cdq");
-	print("		mov     eax, ecx");
-	print("		sub     eax, edx");
-	print("		mov     DWORD  [rbp-36], eax");
-	print("		sub     DWORD  [rbp-4], 1");
-	print("		cmp     DWORD  [rbp-36], 0");
-	print("		jne     .L3");
-	print("		cmp     DWORD  [rbp-8], 0");
-	print("		je      .L4");
-	print("		mov     eax, DWORD  [rbp-4]");
-	print("		cdqe");
-	print("		mov     BYTE  [rbp-32+rax], 45");
-	print("		sub     DWORD  [rbp-4], 1");
-	print("		.L4:");
-	print("		mov     eax, 20");
-	print("		sub     eax, DWORD  [rbp-4]");
-	print("		cdqe");
-	print("		mov     edx, DWORD  [rbp-4]");
-	print("		movsx   rdx, edx");
-	print("		lea     rcx, [rbp-32]");
-	print("		add     rcx, rdx");
-	print("		mov     rdx, rax");
-	print("		mov     rsi, rcx");
-	print("		mov     edi, 1");
-	print("		mov 	rax, 1");
-	print("		syscall");
-	print("		nop");
-	print("		leave");
-	print("		ret");
+	print("		push    rbp")
+	print("		mov     rbp, rsp")
+	print("		sub     rsp, 48")
+	print("		mov     DWORD  [rbp-36], edi")
+	print("		mov     QWORD  [rbp-32], 0")
+	print("		mov     QWORD  [rbp-24], 0")
+	print("		mov     DWORD  [rbp-16], 0")
+	print("		mov     BYTE  [rbp-13], 10")
+	print("		mov     DWORD  [rbp-4], 18")
+	print("		mov     DWORD  [rbp-8], 0")
+	print("		cmp     DWORD  [rbp-36], 0")
+	print("		jns     .L3")
+	print("		neg     DWORD  [rbp-36]")
+	print("		mov     DWORD  [rbp-8], 1")
+	print(".L3:")
+	print("		mov     edx, DWORD  [rbp-36]")
+	print("		movsx   rax, edx")
+	print("		imul    rax, rax, 1717986919")
+	print("		shr     rax, 32")
+	print("		mov     ecx, eax")
+	print("		sar     ecx, 2")
+	print("		mov     eax, edx")
+	print("		sar     eax, 31")
+	print("		sub     ecx, eax")
+	print("		mov     eax, ecx")
+	print("		sal     eax, 2")
+	print("		add     eax, ecx")
+	print("		add     eax, eax")
+	print("		sub     edx, eax")
+	print("		mov     DWORD  [rbp-12], edx")
+	print("		mov     eax, DWORD  [rbp-12]")
+	print("		add     eax, 48")
+	print("		mov     edx, eax")
+	print("		mov     eax, DWORD  [rbp-4]")
+	print("		cdqe")
+	print("		mov     BYTE  [rbp-32+rax], dl")
+	print("		mov     eax, DWORD  [rbp-12]")
+	print("		sub     DWORD  [rbp-36], eax")
+	print("		mov     eax, DWORD  [rbp-36]")
+	print("		movsx   rdx, eax")
+	print("		imul    rdx, rdx, 1717986919")
+	print("		shr     rdx, 32")
+	print("		mov     ecx, edx")
+	print("		sar     ecx, 2")
+	print("		cdq")
+	print("		mov     eax, ecx")
+	print("		sub     eax, edx")
+	print("		mov     DWORD  [rbp-36], eax")
+	print("		sub     DWORD  [rbp-4], 1")
+	print("		cmp     DWORD  [rbp-36], 0")
+	print("		jne     .L3")
+	print("		cmp     DWORD  [rbp-8], 0")
+	print("		je      .L4")
+	print("		mov     eax, DWORD  [rbp-4]")
+	print("		cdqe")
+	print("		mov     BYTE  [rbp-32+rax], 45")
+	print("		sub     DWORD  [rbp-4], 1")
+	print(".L4:")
+	print("		mov     eax, 20")
+	print("		sub     eax, DWORD  [rbp-4]")
+	print("		cdqe")
+	print("		mov     edx, DWORD  [rbp-4]")
+	print("		movsx   rdx, edx")
+	print("		lea     rcx, [rbp-32]")
+	print("		add     rcx, rdx")
+	print("		mov     rdx, rax")
+	print("		mov     rsi, rcx")
+	print("		mov     edi, 1")
+	print("		mov 	rax, 1")
+	print("		syscall")
+	print("		nop")
+	print("		leave")
+	print("		ret")
+
+	print("section .data")
+	for i := 0; i < len(strings); i++ {
+		fmt.Printf("%s: db %s, 10\n", strings[i][1], strings[i][0])
+	}
+	print("")
+
 }
 
 func main() {
