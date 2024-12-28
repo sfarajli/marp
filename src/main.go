@@ -22,7 +22,7 @@ func readfile(path string) []string {
 	tmp := reg.Split(string(dat), -1);
 	/* TODO: add comments */
 
-	for i := range tmp{
+	for i := range tmp {
 		if tmp[i] != "" {
 			raw = append(raw, tmp[i]);
 		}
@@ -137,6 +137,12 @@ func compile(raw[]string) {
 			fmt.Printf("		jmp .loop%d\n", looplabels[len(looplabels) - 1])
 			fmt.Printf(".endloop%d:\n", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
+		/* Functions */
+		case "return":
+			print("		;; RETURN")
+			print("		pop rdi")
+			print("		mov rax, 60")
+			print("		syscall")
 
 		default:
 			panic("invalid word")
@@ -221,7 +227,7 @@ func compile(raw[]string) {
 	print("		syscall");
 	print("		nop");
 	print("		leave");
-	print("		ret")
+	print("		ret");
 }
 
 func main() {
