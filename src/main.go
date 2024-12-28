@@ -138,7 +138,7 @@ func compile(raw[]string) {
 			fmt.Printf(".endloop%d:\n", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
 		/* Functions */
-		case "return":
+		case "exit":
 			print("		;; RETURN")
 			print("		pop rdi")
 			print("		mov rax, 60")
