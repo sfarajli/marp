@@ -1,3 +1,5 @@
+- Seperate library from compiler
+- Add include 
 - Add comments
 + Add build system
 + Add compile option
