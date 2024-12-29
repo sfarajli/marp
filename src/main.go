@@ -166,6 +166,10 @@ func compile(raw[]string) {
 			tmp := [2]string{str, fmt.Sprintf("string_%d", i)}
 			strings = append(strings, tmp)
 			i = lastIndex;
+		case "rem":
+			print("		;; REMOVE")
+			print("		pop r10")
+
 		/* Functions */
 		case "exit":
 			print("		;; EXIT")
@@ -272,7 +276,6 @@ func compile(raw[]string) {
 		fmt.Printf("%s: db %s, 10\n", strings[i][1], strings[i][0])
 	}
 	print("")
-
 }
 
 func main() {
