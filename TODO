@@ -1,5 +1,8 @@
-- Seperate library from compiler
-- Add include 
-- Add comments
+- Separate library functions from the compiler
+- Add Include
++ Add Comments
+- Add Functions
+- Add Macros
+- Add Memory access
 + Add build system
 + Add compile option
