@@ -169,6 +169,12 @@ func compile(raw[]string) {
 		case "rem":
 			print("		;; REMOVE")
 			print("		pop r10")
+		case "swap":
+			print("		;; SWAP")
+			print("		pop r11")
+			print("		pop r10")
+			print("		push r11")
+			print("		push r10")
 
 		/* Functions */
 		case "exit":
