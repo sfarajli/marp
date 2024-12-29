@@ -9,78 +9,147 @@ import (
 
 var print = fmt.Println
 
-func readfile(path string) []string {
+type Operation struct {
+	name string
+	label string
+	crosslabel string
+	data string
+}
 
-	var raw []string;
-	reg := regexp.MustCompile(`\s`)
+type Token struct {
+	str string
+	line int
+	offset int
+}
 
+/* TODO: add error checking */
+
+func tokenize(path string) []Token {
+	var tokens []Token;
+
+	reg := regexp.MustCompile(`\n`)
 	dat, err := os.ReadFile(path);
 	if (err != nil) {
-		panic("failed to read file");
+		panic("Failed to read file");
 	}
 
-	tmp := reg.Split(string(dat), -1);
-	/* TODO: add comments */
+	lines := reg.Split(string(dat), -1);
+	lines = lines[:len(lines) - 1] /* Remove trailing empty line at the end */
 
-	for i := range tmp {
-		if tmp[i] != "" {
-			raw = append(raw, tmp[i]);
+	/* FIXME: offset value apperas to be one value less when using tabs */
+	for lineIndex := 0; lineIndex < len(lines); lineIndex++ {
+		line := lines[lineIndex]
+		buf := ""
+		for offset := 0; offset < len(line); offset++ {
+			char := string(line[offset])
+			if char == "#" {
+				break
+			}
+			if char != " " && char != "\t" {
+				buf += char
+				if offset != len(line) - 1 {
+					continue
+				}
+			}
+			if buf == "" {
+				continue
+			}
+			tokenBuf :=  Token{str: buf, line: lineIndex + 1, offset: offset - len(buf) + 1}
+			tokens = append(tokens, tokenBuf)
+
+			buf = ""
 		}
-	};
-
-	return raw;
-}
-
-func parseString(raw[] string, i int) (str string, strLen int, endIndex int) {
-	str = ""
-	for ;; i++ {
-		word := raw[i]
-		strLen += len(word)
-		str += word
-		if word[len(word) - 1] == '"' {
-			break;
-		}
-		str += " "
-		strLen++
 	}
-
-	return  str, strLen, i
+	return tokens
 }
 
-func compile(raw[]string) {
+func parse(tokens[]Token) []Operation {
+	var ops[] Operation
 	var iflabels[] int
-	var looplabels[] int
-	var strings[][2] string
+	var iflabel int = 0
+	for i := 0; i < len(tokens); i++ {
+		var op Operation
+		_, err := strconv.Atoi(tokens[i].str);
+		if err == nil {
+			op.name = "number"
+			op.data = tokens[i].str
+			/* FIXME: append for ops called at the end */
+			ops = append(ops, op)
+			continue;
+		}
+		if tokens[i].str[0] == '"' {
+			panic("string parsing is not implemented")
+		}
 
+		switch tokens[i].str {
+		case "+":
+			op.name = "plus"
+		case "-":
+			op.name = "minus"
+		case "=":
+			op.name = "equal"
+		case ">":
+			op.name = "greater"
+		case "<":
+			op.name = "less"
+		case ".":
+			op.name = "dump"
+		case "dup":
+			op.name = "duplicate"
+		case "rem":
+			op.name = "remove"
+		case "swap":
+			op.name = "swap"
+		case "if":
+			op.name = "if"
+			op.crosslabel = fmt.Sprintf(".if%d", iflabel)
+			iflabels = append(iflabels, iflabel)
+			iflabel++
+		case "else":
+			op.name = "else"
+			op.crosslabel = fmt.Sprintf(".if%d", iflabel)
+			op.label = fmt.Sprintf(".if%d",iflabels[len(iflabels) - 1])
+			iflabels = iflabels[:len(iflabels) - 1]
+			iflabels = append(iflabels, iflabel)
+			iflabel++
+		case "fi":
+			op.name = "fi"
+			op.label = fmt.Sprintf(".if%d", iflabels[len(iflabels) - 1])
+			iflabels = iflabels[:len(iflabels) - 1]
+
+		case "while": fallthrough
+		case "do": fallthrough
+		case "done":
+			panic("Loops not implemented")
+		default:
+			panic("invalid word")
+		}
+		ops = append(ops, op)
+	}
+	return ops
+}
+
+func compileX86_64(ops[] Operation) {
 	print("section .text")
 	print("global _start")
 	print("_start:")
 
-	for i := 0; i < len(raw); i++ {
-		number, err := strconv.Atoi(raw[i]);
-		if err == nil {
-			print("		;; PUSHING TO STACK")
-			print("		push", number)
-			continue;
-		}
-
-		switch raw[i] {
-		case "+":
-			print("		;; PLUS")
+	for i := 0; i < len(ops); i++ {
+			fmt.Printf("		;; %s\n", ops[i].name)
+		switch ops[i].name {
+		case "plus":
 			print("		pop rsi")
 			print("		pop rax")
 			print("		add rax, rsi")
 			print("		push rax")
 
-		case "-":
-			print("		;; MINUS")
+		case "minus":
 			print("		pop rsi")
 			print("		pop rax")
 			print("		sub rax, rsi")
 			print("		push rax")
 
-		case ">":
-			print("		;; GREATER")
+		case "greater":
 			print("		mov r10, 0")
 			print("		mov r11, 1")
 			print("		pop rsi")
@@ -89,8 +158,7 @@ func compile(raw[]string) {
 			print("		cmovg r10, r11")
 			print("		push r10")
 
-		case "<":
-			print("		;; LESS")
+		case "less":
 			print("		mov r10, 0")
 			print("		mov r11, 1")
 			print("		pop rsi")
@@ -99,8 +167,7 @@ func compile(raw[]string) {
 			print("		cmovl r10, r11")
 			print("		push r10")
 
-		case "=":
-			print("		;; EQUAL")
+		case "equal":
 			print("		mov r10, 0")
 			print("		mov r11,  1")
 			print("		pop rsi")
@@ -109,90 +176,50 @@ func compile(raw[]string) {
 			print("		cmove r10, r11")
 			print("		push r10")
 
-		case ".":
-			print("		;; DUMP")
+		case "dump":
 			print("		pop rdi")
 			print("		call .dump")
 
-		case "dup":
-			print("		;; DUPLICATE")
+		case "duplicate":
 			print("		pop r10")
 			print("		push r10")
 			print("		push r10")
 
-		case "if":
-			print("		;; IF")
-			print("		pop r10")
-			print("		cmp r10, 0")
-			fmt.Printf("		je .if%d\n", i)
-			iflabels = append(iflabels, i)
-
-		case "else":
-			print("		;; ELSE")
-			fmt.Printf("		jmp .if%d\n", i)
-			fmt.Printf(".if%d:\n", iflabels[len(iflabels) - 1])
-			iflabels = iflabels[:len(iflabels) - 1]
-			iflabels = append(iflabels, i)
-
-		case "endif":
-			print("		;; ENDIF")
-			fmt.Printf(".if%d:\n", iflabels[len(iflabels) - 1])
-			iflabels = iflabels[:len(iflabels) - 1]
-
-		case "while":
-			print("		;; WHILE")
-			fmt.Printf(".loop%d:\n", i);
-			looplabels = append(looplabels, i)
-
-		case "do":
-			print("		;; DO")
-			print("		pop r10")
-			print("		cmp r10, 0")
-			fmt.Printf("		je .endloop%d\n", looplabels[len(looplabels) - 1])
-
-		case "endloop":
-			print("		;; ENDLOOP")
-			fmt.Printf("		jmp .loop%d\n", looplabels[len(looplabels) - 1])
-			fmt.Printf(".endloop%d:\n", looplabels[len(looplabels) - 1])
-			looplabels = looplabels[:len(looplabels) - 1]
-
-		case "pushstr":
-			str, strLen, lastIndex := parseString(raw, i + 1)
-
-			print("		;; PUSHING STRING LENGTH")
-			fmt.Printf("		push %d\n", strLen)
-			print("		;; PUSHING STRING")
-			fmt.Printf("		push string_%d\n", i);
-			tmp := [2]string{str, fmt.Sprintf("string_%d", i)}
-			strings = append(strings, tmp)
-			i = lastIndex;
 		case "rem":
-			print("		;; REMOVE")
 			print("		pop r10")
+
 		case "swap":
-			print("		;; SWAP")
 			print("		pop r11")
 			print("		pop r10")
 			print("		push r11")
 			print("		push r10")
 
-		/* Functions */
-		case "exit":
-			print("		;; EXIT")
-			print("		pop rdi")
-			print("		mov rax, 60")
-			print("		syscall")
+		case "if":
+			print("		pop r10")
+			print("		cmp r10, 0")
+			fmt.Printf("		je %s\n", ops[i].crosslabel)
 
-		case "println":
-			print("		;; PRINTLN")
-			print("		pop rsi")
-			print("		pop rdx")
-			print("		mov rdi, 1")
-			print("		mov rax, 1")
-			print("		syscall")
+		case "else":
+			fmt.Printf("		jmp %s\n", ops[i].crosslabel)
+			fmt.Printf("%s:\n", ops[i].label)
+
+		case "fi":
+			fmt.Printf("%s:\n", ops[i].label)
+
+		case "while": fallthrough
+		case "do": fallthrough
+		case "done":
+			panic("Unreachable: loops not implemented")
+
+		case "number":
+			number, err := strconv.Atoi(ops[i].data)
+			if err != nil {
+				panic("Unreachable")
+			}
+			fmt.Printf("	push %d\n", number)
 
 		default:
-			panic("invalid word")
+			panic("Unreachable")
 		}
 	}
 
@@ -278,10 +305,6 @@ func compile(raw[]string) {
 	print("		ret")
 
 	print("section .data")
-	for i := 0; i < len(strings); i++ {
-		fmt.Printf("%s: db %s, 10\n", strings[i][1], strings[i][0])
-	}
-	print("")
 }
 
 func main() {
@@ -292,6 +315,7 @@ func main() {
 		panic("Invaid usage");
 	}
 
-	raw := readfile(argv[argc - 1])
-	compile(raw);
+	tokens := tokenize(argv[argc - 1])
+	ops := parse(tokens)
+	compileX86_64(ops)
 }
