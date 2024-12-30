@@ -22,7 +22,7 @@ type Token struct {
 	offset int
 }
 
-/* TODO: add error checking */
+/* TODO: add validate function for error checking */
 
 func tokenize(path string) []Token {
 	var tokens []Token;
@@ -67,6 +67,9 @@ func parse(tokens[]Token) []Operation {
 	var ops[] Operation
 	var iflabels[] int
 	var iflabel int = 0
+	var looplabels[] int
+	var looplabel int = 0
+
 	for i := 0; i < len(tokens); i++ {
 		var op Operation
 		_, err := strconv.Atoi(tokens[i].str);
@@ -117,10 +120,19 @@ func parse(tokens[]Token) []Operation {
 			op.label = fmt.Sprintf(".if%d", iflabels[len(iflabels) - 1])
 			iflabels = iflabels[:len(iflabels) - 1]
 
-		case "while": fallthrough
-		case "do": fallthrough
+		case "while":
+			op.name = "while"
+			op.label = fmt.Sprintf(".loop%d", looplabel)
+			looplabels = append(looplabels, looplabel)
+		case "do":
+			op.name = "do"
+			op.crosslabel = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
+
 		case "done":
-			panic("Loops not implemented")
+			op.name = "done"
+			op.crosslabel = fmt.Sprintf(".loop%d", looplabels[len(looplabels) - 1])
+			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
+			looplabels = looplabels[:len(looplabels) - 1]
 		default:
 			panic("invalid word")
 		}
@@ -206,10 +218,16 @@ func compileX86_64(ops[] Operation) {
 		case "fi":
 			fmt.Printf("%s:\n", ops[i].label)
 
-		case "while": fallthrough
-		case "do": fallthrough
+		case "while":
+			fmt.Printf("%s:\n", ops[i].label)
+		case "do":
+			print("		pop r10")
+			print("		cmp r10, 0")
+			fmt.Printf("		je %s\n", ops[i].crosslabel)
+
 		case "done":
-			panic("Unreachable: loops not implemented")
+			fmt.Printf("		jmp %s\n", ops[i].crosslabel)
+			fmt.Printf("%s:\n", ops[i].label)
 
 		case "number":
 			number, err := strconv.Atoi(ops[i].data)
