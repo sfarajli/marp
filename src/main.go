@@ -57,7 +57,6 @@ func tokenize(path string) []Token {
 			}
 			tokenBuf :=  Token{str: buf, line: lineIndex + 1, offset: offset - len(buf) + 1}
 			tokens = append(tokens, tokenBuf)
-
 			buf = ""
 		}
 	}
@@ -70,6 +69,7 @@ func parse(tokens[]Token) []Operation {
 	var iflabel int = 0
 	var looplabels[] int
 	var looplabel int = 0
+	var stringlabel int = 0
 
 	for i := 0; i < len(tokens); i++ {
 		var op Operation
@@ -126,16 +126,21 @@ func parse(tokens[]Token) []Operation {
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
 
+		case "pushstr":
+			op.name = "pushstring"
+			i++
+			op.strData = tokens[i].str
+			op.intData = len(tokens[i].str)
+			op.label = fmt.Sprintf("string_%d", stringlabel)
+			stringlabel++
+
 		default:
 			number, err := strconv.Atoi(tokens[i].str);
 			if err == nil {
-				print("here")
 				op.name = "number"
 				op.intData= number
-			} else if tokens[i].str[0] == '"' {
-				panic("string parsing is not implemented")
 			} else {
-				panic("invalid word")
+				panic ("invalid word")
 			}
 		}
 		ops = append(ops, op)
@@ -144,6 +149,7 @@ func parse(tokens[]Token) []Operation {
 }
 
 func compileX86_64(ops[] Operation) {
+	var strings[][2] string
 	print("section .text")
 	print("global _start")
 	print("_start:")
@@ -230,6 +236,11 @@ func compileX86_64(ops[] Operation) {
 		case "done":
 			fmt.Printf("		jmp %s\n", ops[i].crosslabel)
 			fmt.Printf("%s:\n", ops[i].label)
+
+		case "pushstring":
+			fmt.Printf("		push %d\n", ops[i].intData)
+			fmt.Printf("		push %s\n", ops[i].label)
+			strings = append(strings, [2]string {ops[i].strData, ops[i].label})
 
 		case "number":
 			fmt.Printf("		push %d\n", ops[i].intData)
@@ -321,6 +332,9 @@ func compileX86_64(ops[] Operation) {
 	print("		ret")
 
 	print("section .data")
+	for i := 0; i < len(strings); i++ {
+		fmt.Printf("%s: db \"%s\", 10\n", strings[i][1], strings[i][0])
+	}
 }
 
 func main() {
