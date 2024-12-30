@@ -84,7 +84,7 @@ func parse(tokens[]Token) []Operation {
 			op.name = "greater"
 		case "<":
 			op.name = "less"
-		case ".":
+		case "dump":
 			op.name = "dump"
 		case "dup":
 			op.name = "duplicate"
