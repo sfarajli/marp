@@ -205,7 +205,7 @@ func compileX86_64(ops[] Operation) {
 			print("		push r10")
 			print("		push r10")
 
-		case "rem":
+		case "remove":
 			print("		pop r10")
 
 		case "swap":
@@ -228,6 +228,7 @@ func compileX86_64(ops[] Operation) {
 
 		case "while":
 			fmt.Printf("%s:\n", ops[i].label)
+
 		case "do":
 			print("		pop r10")
 			print("		cmp r10, 0")
