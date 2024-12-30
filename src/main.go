@@ -13,7 +13,8 @@ type Operation struct {
 	name string
 	label string
 	crosslabel string
-	data string
+	strData string
+	intData int
 }
 
 type Token struct {
@@ -72,18 +73,6 @@ func parse(tokens[]Token) []Operation {
 
 	for i := 0; i < len(tokens); i++ {
 		var op Operation
-		_, err := strconv.Atoi(tokens[i].str);
-		if err == nil {
-			op.name = "number"
-			op.data = tokens[i].str
-			/* FIXME: append for ops called at the end */
-			ops = append(ops, op)
-			continue;
-		}
-		if tokens[i].str[0] == '"' {
-			panic("string parsing is not implemented")
-		}
-
 		switch tokens[i].str {
 		case "+":
 			op.name = "plus"
@@ -108,6 +97,7 @@ func parse(tokens[]Token) []Operation {
 			op.crosslabel = fmt.Sprintf(".if%d", iflabel)
 			iflabels = append(iflabels, iflabel)
 			iflabel++
+
 		case "else":
 			op.name = "else"
 			op.crosslabel = fmt.Sprintf(".if%d", iflabel)
@@ -115,6 +105,7 @@ func parse(tokens[]Token) []Operation {
 			iflabels = iflabels[:len(iflabels) - 1]
 			iflabels = append(iflabels, iflabel)
 			iflabel++
+
 		case "fi":
 			op.name = "fi"
 			op.label = fmt.Sprintf(".if%d", iflabels[len(iflabels) - 1])
@@ -124,6 +115,7 @@ func parse(tokens[]Token) []Operation {
 			op.name = "while"
 			op.label = fmt.Sprintf(".loop%d", looplabel)
 			looplabels = append(looplabels, looplabel)
+
 		case "do":
 			op.name = "do"
 			op.crosslabel = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
@@ -133,8 +125,18 @@ func parse(tokens[]Token) []Operation {
 			op.crosslabel = fmt.Sprintf(".loop%d", looplabels[len(looplabels) - 1])
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
+
 		default:
-			panic("invalid word")
+			number, err := strconv.Atoi(tokens[i].str);
+			if err == nil {
+				print("here")
+				op.name = "number"
+				op.intData= number
+			} else if tokens[i].str[0] == '"' {
+				panic("string parsing is not implemented")
+			} else {
+				panic("invalid word")
+			}
 		}
 		ops = append(ops, op)
 	}
@@ -147,7 +149,7 @@ func compileX86_64(ops[] Operation) {
 	print("_start:")
 
 	for i := 0; i < len(ops); i++ {
-			fmt.Printf("		;; %s\n", ops[i].name)
+		fmt.Printf("		;; %s\n", ops[i].name)
 		switch ops[i].name {
 		case "plus":
 			print("		pop rsi")
@@ -230,11 +232,7 @@ func compileX86_64(ops[] Operation) {
 			fmt.Printf("%s:\n", ops[i].label)
 
 		case "number":
-			number, err := strconv.Atoi(ops[i].data)
-			if err != nil {
-				panic("Unreachable")
-			}
-			fmt.Printf("	push %d\n", number)
+			fmt.Printf("		push %d\n", ops[i].intData)
 
 		default:
 			panic("Unreachable")
