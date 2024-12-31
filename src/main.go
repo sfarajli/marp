@@ -136,7 +136,6 @@ func parse(tokens[]Token) []Operation {
 			op.crosslabel = fmt.Sprintf(".loop%d", looplabels[len(looplabels) - 1])
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
-
 		default:
 			number, err := strconv.Atoi(tokens[i].str);
 			if err == nil {
@@ -146,8 +145,19 @@ func parse(tokens[]Token) []Operation {
 				op.name = "string"
 				op.strData = tokens[i].str
 				op.intData = len(tokens[i].str)
-				op.label = fmt.Sprintf("string_%d", stringlabel)
+			op.label = fmt.Sprintf("string_%d", stringlabel)
 				stringlabel++
+			} else if len(tokens[i].str) == 9 && tokens[i].str[:8] == "syscall." {
+				parameters, err := strconv.Atoi(string(tokens[i].str[8]))
+				/* FIXME: Too much nested */
+				if err != nil {
+					panic("invalid from for syscall")
+				}
+				if  parameters < 1 || parameters > 6 {
+					panic("syscall must be called with a number between 1 and 6")
+				}
+				op.name = "syscall"
+				op.intData = parameters
 			} else {
 				panic ("invalid word")
 			}
@@ -254,6 +264,32 @@ func compileX86_64(ops[] Operation) {
 
 		case "number":
 			fmt.Printf("		push %d\n", ops[i].intData)
+
+		case "syscall":
+			switch ops[i].intData {
+			case 7:
+				print("		pop r9")
+				fallthrough
+			case 6:
+				print("		pop r8")
+				fallthrough
+			case 5:
+				print("		pop r10")
+				fallthrough
+			case 4:
+				print("		pop rdx")
+				fallthrough
+			case 3:
+				print("		pop rsi")
+				fallthrough
+			case 2:
+				print("		pop rdi")
+				fallthrough
+			case 1:
+				print("		pop rax")
+			}
+			print("		syscall")
+			print("		push rax")
 
 		default:
 			panic("Unreachable")
