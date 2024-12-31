@@ -99,8 +99,8 @@ func parse(tokens[]Token) []Operation {
 			op.name = "dump"
 		case "dup":
 			op.name = "duplicate"
-		case "rem":
-			op.name = "remove"
+		case "drop":
+			op.name = "drop"
 		case "swap":
 			op.name = "swap"
 		case "if":
@@ -226,7 +226,7 @@ func compileX86_64(ops[] Operation) {
 			print("		push r10")
 			print("		push r10")
 
-		case "remove":
+		case "drop":
 			print("		pop r10")
 
 		case "swap":
