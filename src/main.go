@@ -145,7 +145,7 @@ func parse(tokens[]Token) []Operation {
 		} else if tokens[i].str[0] == '"' {
 			op.name = "string"
 			op.strData = tokens[i].str
-			op.intData = len(tokens[i].str)
+			op.intData = len(tokens[i].str) - 1 /* -2 for removing `"` at the beginning and include \n at the end */
 			op.label = fmt.Sprintf("string_%d", stringlabel)
 			stringlabel++
 		} else if len(tokens[i].str) == 9 && tokens[i].str[:8] == "syscall." {
