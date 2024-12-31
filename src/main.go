@@ -234,7 +234,7 @@ func compileX86_64(ops[] Operation) {
 	print("_start:")
 
 	for i := 0; i < len(ops); i++ {
-		fmt.Printf("	;; %s\n", ops[i].name)
+		fmt.Printf("\t;; %s\n", ops[i].name)
 		fmt.Printf(X86_64map(ops[i]))
 	}
 
