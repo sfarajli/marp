@@ -81,6 +81,7 @@ func parse(tokens[]Token) []Operation {
 	var looplabels[] int
 	var looplabel int = 0
 	var stringlabel int = 0
+	var constants[][2] string
 
 	for i := 0; i < len(tokens); i++ {
 		var op Operation
@@ -136,6 +137,14 @@ func parse(tokens[]Token) []Operation {
 			op.crosslabel = fmt.Sprintf(".loop%d", looplabels[len(looplabels) - 1])
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
+		case "const":
+			if (i + 2 >= len(tokens)) {
+				/* FIXME: Better error message */
+				panic("invalid const")
+			}
+			constants = append(constants, [2]string{tokens[i + 1].str, tokens[i + 2].str})
+			i += 2
+			continue
 		}
 
 		number, err := strconv.Atoi(tokens[i].str);
@@ -159,6 +168,12 @@ func parse(tokens[]Token) []Operation {
 			op.name = "syscall"
 			op.intData = parameters
 		}
+		for y:= 0; y < len(constants); y++ {
+			if tokens[i].str == constants[y][0] {
+				op.name = "constant"
+				op.strData = constants[y][1]
+			}
+		}
 
 		if op.name ==  "" {
 			panic ("invalid word")
@@ -169,6 +184,49 @@ func parse(tokens[]Token) []Operation {
 	return ops
 }
 
+/* FIXME: find a better function name */
+func X86_64map(op Operation) string{
+	switch op.name {
+	case "plus":
+		return "\tpop rsi\n\tpop rax\n\tadd rax, rsi\n\tpush rax\n"
+	case "minus":
+		return "\tpop rsi\n\tpop rax\n\tsub rax, rsi\n\tpush rax\n"
+	case "greater":
+		return "\tmov r10, 0\n\tmov r11, 1\n\tpop rsi\n\tpop rax\n\tcmp rax, rsi\n\tcmovg r10, r11\n\tpush r10\n"
+	case "less":
+		return "\tmov r10, 0\n\tmov r11, 1\n\tpop rsi\n\tpop rax\n\tcmp rax, rsi\n\tcmovl r10, r11\n\tpush r10\n"
+	case "equal":
+		return "\tmov r10, 0\n\tmov r11,  1\n\tpop rsi\n\tpop rax\n\tcmp rax, rsi\n\tcmove r10, r11\n\tpush r10\n"
+	case "dump":
+		return "\tpop rdi\n\tcall .dump\n"
+	case "duplicate":
+		return "\tpop r10\n\tpush r10\n\tpush r10\n"
+	case "drop":
+		return "\tpop r10\n"
+	case "swap":
+		return "\tpop r11\n\tpop r10\n\tpush r11\n\tpush r10\n"
+	case "if":
+		return fmt.Sprintf("\tpop r10\n\tcmp r10, 0\n\tje %s\n", op.crosslabel)
+	case "else":
+		return fmt.Sprintf("\tjmp %s\n%s:\n", op.crosslabel, op.label)
+	case "fi":
+		return fmt.Sprintf("%s:\n", op.label)
+	case "while":
+		return fmt.Sprintf("%s:\n", op.label)
+	case "do":
+		return fmt.Sprintf("\tpop r10\n\tcmp r10, 0\n\tje %s\n", op.crosslabel)
+	case "done":
+		return fmt.Sprintf("\tjmp %s\n%s:\n", op.crosslabel, op.label)
+	case "string":
+		/*TODO: add string*/
+	case "number":
+		return fmt.Sprintf("\tpush %d\n", op.intData)
+	case "syscall":
+		/*TODO: add syscall*/
+	}
+	panic("X86_64map unreachable")
+}
+
 func compileX86_64(ops[] Operation) {
 	var strings[][2] string
 	print("section .text")
@@ -176,208 +234,89 @@ func compileX86_64(ops[] Operation) {
 	print("_start:")
 
 	for i := 0; i < len(ops); i++ {
-		fmt.Printf("		;; %s\n", ops[i].name)
-		switch ops[i].name {
-		case "plus":
-			print("		pop rsi")
-			print("		pop rax")
-			print("		add rax, rsi")
-			print("		push rax")
-
-		case "minus":
-			print("		pop rsi")
-			print("		pop rax")
-			print("		sub rax, rsi")
-			print("		push rax")
-
-		case "greater":
-			print("		mov r10, 0")
-			print("		mov r11, 1")
-			print("		pop rsi")
-			print("		pop rax")
-			print("		cmp rax, rsi")
-			print("		cmovg r10, r11")
-			print("		push r10")
-
-		case "less":
-			print("		mov r10, 0")
-			print("		mov r11, 1")
-			print("		pop rsi")
-			print("		pop rax")
-			print("		cmp rax, rsi")
-			print("		cmovl r10, r11")
-			print("		push r10")
-
-		case "equal":
-			print("		mov r10, 0")
-			print("		mov r11,  1")
-			print("		pop rsi")
-			print("		pop rax")
-			print("		cmp rax, rsi")
-			print("		cmove r10, r11")
-			print("		push r10")
-
-		case "dump":
-			print("		pop rdi")
-			print("		call .dump")
-
-		case "duplicate":
-			print("		pop r10")
-			print("		push r10")
-			print("		push r10")
-
-		case "drop":
-			print("		pop r10")
-
-		case "swap":
-			print("		pop r11")
-			print("		pop r10")
-			print("		push r11")
-			print("		push r10")
-
-		case "if":
-			print("		pop r10")
-			print("		cmp r10, 0")
-			fmt.Printf("		je %s\n", ops[i].crosslabel)
-
-		case "else":
-			fmt.Printf("		jmp %s\n", ops[i].crosslabel)
-			fmt.Printf("%s:\n", ops[i].label)
-
-		case "fi":
-			fmt.Printf("%s:\n", ops[i].label)
-
-		case "while":
-			fmt.Printf("%s:\n", ops[i].label)
-
-		case "do":
-			print("		pop r10")
-			print("		cmp r10, 0")
-			fmt.Printf("		je %s\n", ops[i].crosslabel)
-
-		case "done":
-			fmt.Printf("		jmp %s\n", ops[i].crosslabel)
-			fmt.Printf("%s:\n", ops[i].label)
-
-		case "string":
-			fmt.Printf("		push %d\n", ops[i].intData)
-			fmt.Printf("		push %s\n", ops[i].label)
-			strings = append(strings, [2]string {ops[i].strData, ops[i].label})
-
-		case "number":
-			fmt.Printf("		push %d\n", ops[i].intData)
-
-		case "syscall":
-			switch ops[i].intData {
-			case 7:
-				print("		pop r9")
-				fallthrough
-			case 6:
-				print("		pop r8")
-				fallthrough
-			case 5:
-				print("		pop r10")
-				fallthrough
-			case 4:
-				print("		pop rdx")
-				fallthrough
-			case 3:
-				print("		pop rsi")
-				fallthrough
-			case 2:
-				print("		pop rdi")
-				fallthrough
-			case 1:
-				print("		pop rax")
-			}
-			print("		syscall")
-			print("		push rax")
-
-		default:
-			panic("Unreachable")
-		}
+		fmt.Printf("	;; %s\n", ops[i].name)
+		fmt.Printf(X86_64map(ops[i]))
 	}
 
-	print("		;; EXIT")
-	print("		mov rdi, 0")
-	print("		mov rax, 60")
-	print("		syscall")
-
+	print("	;; EXIT")
+	print("	mov rdi, 0")
+	print("	mov rax, 60")
+	print("	syscall")
 
 	print(".dump:");
-	print("		push    rbp")
-	print("		mov     rbp, rsp")
-	print("		sub     rsp, 48")
-	print("		mov     DWORD  [rbp-36], edi")
-	print("		mov     QWORD  [rbp-32], 0")
-	print("		mov     QWORD  [rbp-24], 0")
-	print("		mov     DWORD  [rbp-16], 0")
-	print("		mov     BYTE  [rbp-13], 10")
-	print("		mov     DWORD  [rbp-4], 18")
-	print("		mov     DWORD  [rbp-8], 0")
-	print("		cmp     DWORD  [rbp-36], 0")
-	print("		jns     .L3")
-	print("		neg     DWORD  [rbp-36]")
-	print("		mov     DWORD  [rbp-8], 1")
+	print("	push    rbp")
+	print("	mov     rbp, rsp")
+	print("	sub     rsp, 48")
+	print("	mov     DWORD  [rbp-36], edi")
+	print("	mov     QWORD  [rbp-32], 0")
+	print("	mov     QWORD  [rbp-24], 0")
+	print("	mov     DWORD  [rbp-16], 0")
+	print("	mov     BYTE  [rbp-13], 10")
+	print("	mov     DWORD  [rbp-4], 18")
+	print("	mov     DWORD  [rbp-8], 0")
+	print("	cmp     DWORD  [rbp-36], 0")
+	print("	jns     .L3")
+	print("	neg     DWORD  [rbp-36]")
+	print("	mov     DWORD  [rbp-8], 1")
 	print(".L3:")
-	print("		mov     edx, DWORD  [rbp-36]")
-	print("		movsx   rax, edx")
-	print("		imul    rax, rax, 1717986919")
-	print("		shr     rax, 32")
-	print("		mov     ecx, eax")
-	print("		sar     ecx, 2")
-	print("		mov     eax, edx")
-	print("		sar     eax, 31")
-	print("		sub     ecx, eax")
-	print("		mov     eax, ecx")
-	print("		sal     eax, 2")
-	print("		add     eax, ecx")
-	print("		add     eax, eax")
-	print("		sub     edx, eax")
-	print("		mov     DWORD  [rbp-12], edx")
-	print("		mov     eax, DWORD  [rbp-12]")
-	print("		add     eax, 48")
-	print("		mov     edx, eax")
-	print("		mov     eax, DWORD  [rbp-4]")
-	print("		cdqe")
-	print("		mov     BYTE  [rbp-32+rax], dl")
-	print("		mov     eax, DWORD  [rbp-12]")
-	print("		sub     DWORD  [rbp-36], eax")
-	print("		mov     eax, DWORD  [rbp-36]")
-	print("		movsx   rdx, eax")
-	print("		imul    rdx, rdx, 1717986919")
-	print("		shr     rdx, 32")
-	print("		mov     ecx, edx")
-	print("		sar     ecx, 2")
-	print("		cdq")
-	print("		mov     eax, ecx")
-	print("		sub     eax, edx")
-	print("		mov     DWORD  [rbp-36], eax")
-	print("		sub     DWORD  [rbp-4], 1")
-	print("		cmp     DWORD  [rbp-36], 0")
-	print("		jne     .L3")
-	print("		cmp     DWORD  [rbp-8], 0")
-	print("		je      .L4")
-	print("		mov     eax, DWORD  [rbp-4]")
-	print("		cdqe")
-	print("		mov     BYTE  [rbp-32+rax], 45")
-	print("		sub     DWORD  [rbp-4], 1")
+	print("	mov     edx, DWORD  [rbp-36]")
+	print("	movsx   rax, edx")
+	print("	imul    rax, rax, 1717986919")
+	print("	shr     rax, 32")
+	print("	mov     ecx, eax")
+	print("	sar     ecx, 2")
+	print("	mov     eax, edx")
+	print("	sar     eax, 31")
+	print("	sub     ecx, eax")
+	print("	mov     eax, ecx")
+	print("	sal     eax, 2")
+	print("	add     eax, ecx")
+	print("	add     eax, eax")
+	print("	sub     edx, eax")
+	print("	mov     DWORD  [rbp-12], edx")
+	print("	mov     eax, DWORD  [rbp-12]")
+	print("	add     eax, 48")
+	print("	mov     edx, eax")
+	print("	mov     eax, DWORD  [rbp-4]")
+	print("	cdqe")
+	print("	mov     BYTE  [rbp-32+rax], dl")
+	print("	mov     eax, DWORD  [rbp-12]")
+	print("	sub     DWORD  [rbp-36], eax")
+	print("	mov     eax, DWORD  [rbp-36]")
+	print("	movsx   rdx, eax")
+	print("	imul    rdx, rdx, 1717986919")
+	print("	shr     rdx, 32")
+	print("	mov     ecx, edx")
+	print("	sar     ecx, 2")
+	print("	cdq")
+	print("	mov     eax, ecx")
+	print("	sub     eax, edx")
+	print("	mov     DWORD  [rbp-36], eax")
+	print("	sub     DWORD  [rbp-4], 1")
+	print("	cmp     DWORD  [rbp-36], 0")
+	print("	jne     .L3")
+	print("	cmp     DWORD  [rbp-8], 0")
+	print("	je      .L4")
+	print("	mov     eax, DWORD  [rbp-4]")
+	print("	cdqe")
+	print("	mov     BYTE  [rbp-32+rax], 45")
+	print("	sub     DWORD  [rbp-4], 1")
 	print(".L4:")
-	print("		mov     eax, 20")
-	print("		sub     eax, DWORD  [rbp-4]")
-	print("		cdqe")
-	print("		mov     edx, DWORD  [rbp-4]")
-	print("		movsx   rdx, edx")
-	print("		lea     rcx, [rbp-32]")
-	print("		add     rcx, rdx")
-	print("		mov     rdx, rax")
-	print("		mov     rsi, rcx")
-	print("		mov     edi, 1")
-	print("		mov 	rax, 1")
-	print("		syscall")
-	print("		nop")
-	print("		leave")
-	print("		ret")
+	print("	mov     eax, 20")
+	print("	sub     eax, DWORD  [rbp-4]")
+	print("	cdqe")
+	print("	mov     edx, DWORD  [rbp-4]")
+	print("	movsx   rdx, edx")
+	print("	lea     rcx, [rbp-32]")
+	print("	add     rcx, rdx")
+	print("	mov     rdx, rax")
+	print("	mov     rsi, rcx")
+	print("	mov     edi, 1")
+	print("	mov 	rax, 1")
+	print("	syscall")
+	print("	nop")
+	print("	leave")
+	print("	ret")
 
 	print("section .data")
 	for i := 0; i < len(strings); i++ {
