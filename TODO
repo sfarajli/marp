@@ -1,8 +1,9 @@
 - Separate library functions from the compiler
+- Add const
 - Add Include
++ Add Strings
 + Add Comments
-- Add Functions
-- Add Macros
-- Add Memory access
++ Add systemcalls
+- Add Memory access and variables
 + Add build system
 + Add compile option
