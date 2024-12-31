@@ -3,5 +3,9 @@ test.gorth
 test
 Makefile
 gorth
+examples/const.gorth
+examples/hello_world.gorth
+examples/string.gorth
+examples/words.gorth
 *.o
 *.s
