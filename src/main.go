@@ -136,32 +136,34 @@ func parse(tokens[]Token) []Operation {
 			op.crosslabel = fmt.Sprintf(".loop%d", looplabels[len(looplabels) - 1])
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
-		default:
-			number, err := strconv.Atoi(tokens[i].str);
-			if err == nil {
-				op.name = "number"
-				op.intData= number
-			} else if tokens[i].str[0] == '"' {
-				op.name = "string"
-				op.strData = tokens[i].str
-				op.intData = len(tokens[i].str)
-			op.label = fmt.Sprintf("string_%d", stringlabel)
-				stringlabel++
-			} else if len(tokens[i].str) == 9 && tokens[i].str[:8] == "syscall." {
-				parameters, err := strconv.Atoi(string(tokens[i].str[8]))
-				/* FIXME: Too much nested */
-				if err != nil {
-					panic("invalid from for syscall")
-				}
-				if  parameters < 1 || parameters > 6 {
-					panic("syscall must be called with a number between 1 and 6")
-				}
-				op.name = "syscall"
-				op.intData = parameters
-			} else {
-				panic ("invalid word")
-			}
 		}
+
+		number, err := strconv.Atoi(tokens[i].str);
+		if err == nil {
+			op.name = "number"
+			op.intData= number
+		} else if tokens[i].str[0] == '"' {
+			op.name = "string"
+			op.strData = tokens[i].str
+			op.intData = len(tokens[i].str)
+			op.label = fmt.Sprintf("string_%d", stringlabel)
+			stringlabel++
+		} else if len(tokens[i].str) == 9 && tokens[i].str[:8] == "syscall." {
+			parameters, err := strconv.Atoi(string(tokens[i].str[8]))
+			if err != nil {
+				panic("invalid from for syscall")
+			}
+			if  parameters < 1 || parameters > 6 {
+				panic("syscall must be called with a number between 1 and 6")
+			}
+			op.name = "syscall"
+			op.intData = parameters
+		}
+
+		if op.name ==  "" {
+			panic ("invalid word")
+		}
+
 		ops = append(ops, op)
 	}
 	return ops
