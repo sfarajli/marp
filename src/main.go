@@ -41,10 +41,18 @@ func tokenize(path string) []Token {
 	for lineIndex := 0; lineIndex < len(lines); lineIndex++ {
 		line := lines[lineIndex]
 		buf := ""
+		isStr := false
 		for offset := 0; offset < len(line); offset++ {
 			char := string(line[offset])
 			if char == "#" {
 				break
+			}
+			if char == "\"" {
+				isStr = !isStr
+			}
+			if isStr {
+				buf += char
+				continue;
 			}
 			if char != " " && char != "\t" {
 				buf += char
@@ -59,7 +67,13 @@ func tokenize(path string) []Token {
 			tokens = append(tokens, tokenBuf)
 			buf = ""
 		}
+		if isStr {
+			panic("invalid syntax")
+		}
 	}
+
+	print(tokens)
+	os.Exit(0)
 	return tokens
 }
 
