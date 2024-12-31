@@ -37,7 +37,7 @@ func tokenize(path string) []Token {
 	lines := reg.Split(string(dat), -1);
 	lines = lines[:len(lines) - 1] /* Remove trailing empty line at the end */
 
-	/* FIXME: offset value apperas to be one value less when using tabs */
+	/* FIXME: offset value apperas to be one value less when using tabs and first tab is ignored when storing strings */
 	for lineIndex := 0; lineIndex < len(lines); lineIndex++ {
 		line := lines[lineIndex]
 		buf := ""
@@ -71,9 +71,6 @@ func tokenize(path string) []Token {
 			panic("invalid syntax")
 		}
 	}
-
-	print(tokens)
-	os.Exit(0)
 	return tokens
 }
 
@@ -140,19 +137,17 @@ func parse(tokens[]Token) []Operation {
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
 
-		case "pushstr":
-			op.name = "pushstring"
-			i++
-			op.strData = tokens[i].str
-			op.intData = len(tokens[i].str)
-			op.label = fmt.Sprintf("string_%d", stringlabel)
-			stringlabel++
-
 		default:
 			number, err := strconv.Atoi(tokens[i].str);
 			if err == nil {
 				op.name = "number"
 				op.intData= number
+			} else if tokens[i].str[0] == '"' {
+				op.name = "string"
+				op.strData = tokens[i].str
+				op.intData = len(tokens[i].str)
+				op.label = fmt.Sprintf("string_%d", stringlabel)
+				stringlabel++
 			} else {
 				panic ("invalid word")
 			}
@@ -252,7 +247,7 @@ func compileX86_64(ops[] Operation) {
 			fmt.Printf("		jmp %s\n", ops[i].crosslabel)
 			fmt.Printf("%s:\n", ops[i].label)
 
-		case "pushstring":
+		case "string":
 			fmt.Printf("		push %d\n", ops[i].intData)
 			fmt.Printf("		push %s\n", ops[i].label)
 			strings = append(strings, [2]string {ops[i].strData, ops[i].label})
@@ -348,7 +343,7 @@ func compileX86_64(ops[] Operation) {
 
 	print("section .data")
 	for i := 0; i < len(strings); i++ {
-		fmt.Printf("%s: db \"%s\", 10\n", strings[i][1], strings[i][0])
+		fmt.Printf("%s: db %s, 10\n", strings[i][1], strings[i][0])
 	}
 }
 
