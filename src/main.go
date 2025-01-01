@@ -110,6 +110,8 @@ func parse(tokens[]Token) []Operation {
 			op.name = "drop"
 		case "swap":
 			op.name = "swap"
+		case "2swap":
+			op.name = "2swap"
 		case "if":
 			op.name = "if"
 			op.crosslabel = fmt.Sprintf(".if%d", iflabel)
@@ -225,6 +227,8 @@ func X86_64map(op Operation) string{
 		return "\tpop r10\n"
 	case "swap":
 		return "\tpop r11\n\tpop r10\n\tpush r11\n\tpush r10\n"
+	case "2swap":
+		return "\tpop rax\n\tpop rsi\n\tpop r11\n\tpop r10\n\tpush rsi\n\tpush rax\n\tpush r10\n\tpush r11\n"
 	case "if":
 		return fmt.Sprintf("\tpop r10\n\tcmp r10, 0\n\tje %s\n", op.crosslabel)
 	case "else":
