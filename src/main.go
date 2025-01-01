@@ -23,6 +23,12 @@ type Token struct {
 	offset int
 }
 
+type Word struct {
+	typ string
+	name string
+	tokens[] Token
+}
+
 /* TODO: add validate function for error checking */
 
 func tokenize(path string) []Token {
@@ -81,7 +87,7 @@ func parse(tokens[]Token) []Operation {
 	var looplabels[] int
 	var looplabel int = 0
 	var stringlabel int = 0
-	var constants[][2] string
+	var externalWords[] Word;
 
 	for i := 0; i < len(tokens); i++ {
 		var op Operation
@@ -137,12 +143,21 @@ func parse(tokens[]Token) []Operation {
 			op.crosslabel = fmt.Sprintf(".loop%d", looplabels[len(looplabels) - 1])
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
+
 		case "const":
-			if (i + 2 >= len(tokens)) {
+			if i + 2 >= len(tokens) {
 				/* FIXME: Better error message */
-				panic("invalid const")
+				panic("invalid const usage")
 			}
-			constants = append(constants, [2]string{tokens[i + 1].str, tokens[i + 2].str})
+			name := tokens[i + 1].str
+			token := tokens[i + 2]
+			_, err := strconv.Atoi(token.str)
+			/* FIXME: add character as well */
+			if err != nil && token.str[0] != '"' {
+				/* FIXME: Better error message */
+				panic("Can only define strings and numbers with const")
+			}
+			externalWords = append(externalWords, Word{typ: "const", name: name, tokens: []Token{token}})
 			i += 2
 			continue
 		}
@@ -168,11 +183,15 @@ func parse(tokens[]Token) []Operation {
 			op.name = "syscall"
 			op.intData = parameters
 		}
-		for y:= 0; y < len(constants); y++ {
-			if tokens[i].str == constants[y][0] {
-				op.name = "constant"
-				op.strData = constants[y][1]
+
+		for y := 0; y < len(externalWords); y++ {
+			if tokens[i].str != externalWords[y].name {
+				continue
 			}
+			opsBuf := parse(externalWords[y].tokens)
+			ops = append(ops, opsBuf...)
+			/* FIXME: Find an alternative to goto */
+			goto done
 		}
 
 		if op.name ==  "" {
@@ -180,6 +199,7 @@ func parse(tokens[]Token) []Operation {
 		}
 
 		ops = append(ops, op)
+done:
 	}
 	return ops
 }
