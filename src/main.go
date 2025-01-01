@@ -29,8 +29,6 @@ type Word struct {
 	tokens[] Token
 }
 
-/* TODO: add validate function for error checking */
-
 func tokenize(path string) []Token {
 	var tokens []Token;
 
@@ -80,14 +78,14 @@ func tokenize(path string) []Token {
 	return tokens
 }
 
+var iflabel int = 0
+var looplabel int = 0
+var stringlabel int = 0
 func parse(tokens[]Token) []Operation {
 	var ops[] Operation
+	var externalWords[] Word
 	var iflabels[] int
-	var iflabel int = 0
 	var looplabels[] int
-	var looplabel int = 0
-	var stringlabel int = 0
-	var externalWords[] Word;
 
 	for i := 0; i < len(tokens); i++ {
 		var op Operation
@@ -161,6 +159,24 @@ func parse(tokens[]Token) []Operation {
 			}
 			externalWords = append(externalWords, Word{typ: "const", name: name, tokens: []Token{token}})
 			i += 2
+			continue
+
+		case "word":
+			var tokBuf[] Token
+			if i + 1 >= len(tokens) {
+				/* FIXME: Better error message */
+				panic("invalid word usage")
+			}
+			name := tokens[i + 1].str
+			i += 2
+			for ;i < len(tokens) && tokens[i].str != "end"; i++ {
+				tokBuf = append(tokBuf, tokens[i])
+			}
+			if i == len(tokens) {
+				/* FIXME: Better error message */
+				panic("missing end")
+			}
+			externalWords = append(externalWords, Word{typ: "word", name: name, tokens: tokBuf})
 			continue
 		}
 
