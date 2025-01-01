@@ -218,7 +218,7 @@ func X86_64map(op Operation) string{
 	case "done":
 		return fmt.Sprintf("\tjmp %s\n%s:\n", op.crosslabel, op.label)
 	case "string":
-		/*TODO: add string*/
+		return fmt.Sprintf("\tpush %d\n\tpush %s\n", op.intData, op.label)
 	case "number":
 		return fmt.Sprintf("\tpush %d\n", op.intData)
 	case "syscall":
@@ -236,6 +236,10 @@ func compileX86_64(ops[] Operation) {
 	for i := 0; i < len(ops); i++ {
 		fmt.Printf("\t;; %s\n", ops[i].name)
 		fmt.Printf(X86_64map(ops[i]))
+		if (ops[i].name == "string") {
+			strings = append(strings, [2]string{ops[i].strData, ops[i].label})
+		}
+
 	}
 
 	print("	;; EXIT")
