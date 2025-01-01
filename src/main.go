@@ -222,7 +222,33 @@ func X86_64map(op Operation) string{
 	case "number":
 		return fmt.Sprintf("\tpush %d\n", op.intData)
 	case "syscall":
-		/*TODO: add syscall*/
+		buf := ""
+		switch op.intData {
+		case 7:
+			buf +="\tpop r9\n"
+			fallthrough
+		case 6:
+			buf +="\tpop r8\n"
+			fallthrough
+		case 5:
+			buf += "\tpop r10\n"
+			fallthrough
+		case 4:
+			buf += "\tpop rdx\n"
+			fallthrough
+		case 3:
+			buf += "\tpop rsi\n"
+			fallthrough
+		case 2:
+			buf += "\tpop rdi\n"
+			fallthrough
+		case 1:
+			buf += "\tpop rax\n"
+		}
+
+		buf += "\tsyscall\n"
+		buf += "\tpush rax\n"
+		return buf
 	}
 	panic("X86_64map unreachable")
 }
@@ -239,7 +265,6 @@ func compileX86_64(ops[] Operation) {
 		if (ops[i].name == "string") {
 			strings = append(strings, [2]string{ops[i].strData, ops[i].label})
 		}
-
 	}
 
 	print("	;; EXIT")
