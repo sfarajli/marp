@@ -255,15 +255,15 @@ func X86_64map(op Operation) string{
 			buf += "\tpop rsi\n"
 			buf += "\tpop rdx\n"
 			buf += "\tpop r10\n"
-			buf +="\tpop r8\n"
-			buf +="\tpop r9\n"
+			buf += "\tpop r8\n"
+			buf += "\tpop r9\n"
 		case 6:
 			buf += "\tpop rax\n"
 			buf += "\tpop rdi\n"
 			buf += "\tpop rsi\n"
 			buf += "\tpop rdx\n"
 			buf += "\tpop r10\n"
-			buf +="\tpop r8\n"
+			buf += "\tpop r8\n"
 		case 5:
 			buf += "\tpop rax\n"
 			buf += "\tpop rdi\n"
