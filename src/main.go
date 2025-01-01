@@ -246,26 +246,42 @@ func X86_64map(op Operation) string{
 	case "number":
 		return fmt.Sprintf("\tpush %d\n", op.intData)
 	case "syscall":
+		/* FIXME: make it more consise */
 		buf := ""
 		switch op.intData {
 		case 7:
-			buf +="\tpop r9\n"
-			fallthrough
-		case 6:
-			buf +="\tpop r8\n"
-			fallthrough
-		case 5:
-			buf += "\tpop r10\n"
-			fallthrough
-		case 4:
-			buf += "\tpop rdx\n"
-			fallthrough
-		case 3:
-			buf += "\tpop rsi\n"
-			fallthrough
-		case 2:
+			buf += "\tpop rax\n"
 			buf += "\tpop rdi\n"
-			fallthrough
+			buf += "\tpop rsi\n"
+			buf += "\tpop rdx\n"
+			buf += "\tpop r10\n"
+			buf +="\tpop r8\n"
+			buf +="\tpop r9\n"
+		case 6:
+			buf += "\tpop rax\n"
+			buf += "\tpop rdi\n"
+			buf += "\tpop rsi\n"
+			buf += "\tpop rdx\n"
+			buf += "\tpop r10\n"
+			buf +="\tpop r8\n"
+		case 5:
+			buf += "\tpop rax\n"
+			buf += "\tpop rdi\n"
+			buf += "\tpop rsi\n"
+			buf += "\tpop rdx\n"
+			buf += "\tpop r10\n"
+		case 4:
+			buf += "\tpop rax\n"
+			buf += "\tpop rdi\n"
+			buf += "\tpop rsi\n"
+			buf += "\tpop rdx\n"
+		case 3:
+			buf += "\tpop rax\n"
+			buf += "\tpop rdi\n"
+			buf += "\tpop rsi\n"
+		case 2:
+			buf += "\tpop rax\n"
+			buf += "\tpop rdi\n"
 		case 1:
 			buf += "\tpop rax\n"
 		}
