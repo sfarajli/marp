@@ -17,6 +17,7 @@ type Operation struct {
 	intData int
 }
 
+/* TODO: Add file name */
 type Token struct {
 	str string
 	line int
@@ -74,6 +75,31 @@ func tokenize(path string) []Token {
 		if isStr {
 			panic("invalid syntax")
 		}
+	}
+	return tokens
+}
+
+func preprocess(tokens[] Token) []Token {
+	for i := 0; i < len(tokens); i++ {
+		if tokens[i].str != "include" {
+			continue
+		}
+		if i + 1 >= len(tokens) {
+			/* FIXME: Better error message */
+			panic("invalid include syntax")
+		}
+		if tokens[i + 1].str[0] != '"' {
+			/* FIXME: Better error message */
+			panic("include must be wrapped with `\"`")
+		}
+		rawName := tokens[i + 1].str
+		fileName := rawName[1:len(rawName) - 1]
+
+		incTokens := tokenize(fileName)
+		firstHalf := tokens[:i]
+		secondHalf := tokens[i + 2:]
+		tokens = append(firstHalf, incTokens...)
+		tokens = append(tokens, secondHalf...)
 	}
 	return tokens
 }
@@ -224,6 +250,7 @@ done:
 
 /* FIXME: find a better function name */
 func X86_64map(op Operation) string{
+	/* FIXME: Consider making it more readable by writing instructions vertically */
 	switch op.name {
 	case "plus":
 		return "\tpop rsi\n\tpop rax\n\tadd rax, rsi\n\tpush rax\n"
@@ -418,6 +445,7 @@ func main() {
 	}
 
 	tokens := tokenize(argv[argc - 1])
+	tokens = preprocess(tokens)
 	ops := parse(tokens)
 	compileX86_64(ops)
 }
