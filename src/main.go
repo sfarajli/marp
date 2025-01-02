@@ -79,6 +79,7 @@ func tokenize(path string) []Token {
 	return tokens
 }
 
+/* FIXME: handle recursive includes */
 func preprocess(tokens[] Token) []Token {
 	for i := 0; i < len(tokens); i++ {
 		if tokens[i].str != "include" {
@@ -248,49 +249,107 @@ done:
 	return ops
 }
 
-/* FIXME: find a better function name */
-func X86_64map(op Operation) string{
-	/* FIXME: Consider making it more readable by writing instructions vertically */
+func mapX86_64linux(op Operation) string{
+	buf := ""
 	switch op.name {
 	case "plus":
-		return "\tpop rsi\n\tpop rax\n\tadd rax, rsi\n\tpush rax\n"
+		buf += "\tpop rsi\n"
+		buf += "\tpop rax\n"
+		buf += "\tadd rax, rsi\n"
+		buf += "\tpush rax\n"
+
 	case "minus":
-		return "\tpop rsi\n\tpop rax\n\tsub rax, rsi\n\tpush rax\n"
+		buf += "\tpop rsi\n"
+		buf += "\tpop rax\n"
+		buf += "\tsub rax, rsi\n"
+		buf += "\tpush rax\n"
+
 	case "greater":
-		return "\tmov r10, 0\n\tmov r11, 1\n\tpop rsi\n\tpop rax\n\tcmp rax, rsi\n\tcmovg r10, r11\n\tpush r10\n"
+		buf += "\tmov r10, 0\n"
+		buf += "\tmov r11, 1\n"
+		buf += "\tpop rsi\n"
+		buf += "\tpop rax\n"
+		buf += "\tcmp rax, rsi\n"
+		buf += "\tcmovg r10, r11\n"
+		buf += "\tpush r10\n"
+
 	case "less":
-		return "\tmov r10, 0\n\tmov r11, 1\n\tpop rsi\n\tpop rax\n\tcmp rax, rsi\n\tcmovl r10, r11\n\tpush r10\n"
+		buf += "\tmov r10, 0\n"
+		buf += "\tmov r11, 1\n"
+		buf += "\tpop rsi\n"
+		buf += "\tpop rax\n"
+		buf += "\tcmp rax, rsi\n"
+		buf += "\tcmovl r10, r11\n"
+		buf += "\tpush r10\n"
+
 	case "equal":
-		return "\tmov r10, 0\n\tmov r11,  1\n\tpop rsi\n\tpop rax\n\tcmp rax, rsi\n\tcmove r10, r11\n\tpush r10\n"
+		buf += "\tmov r10, 0\n"
+		buf += "\tmov r11,  1\n"
+		buf += "\tpop rsi\n"
+		buf += "\tpop rax\n"
+		buf += "\tcmp rax, rsi\n"
+		buf += "\tcmove r10, r11\n"
+		buf += "\tpush r10\n"
+
 	case "dump":
-		return "\tpop rdi\n\tcall .dump\n"
+		buf += "\tpop rdi\n"
+		buf += "\tcall .dump\n"
+
 	case "duplicate":
-		return "\tpop r10\n\tpush r10\n\tpush r10\n"
+		buf += "\tpop r10\n"
+		buf += "\tpush r10\n"
+		buf += "\tpush r10\n"
+
 	case "drop":
-		return "\tpop r10\n"
+		buf += "\tpop r10\n"
+
 	case "swap":
-		return "\tpop r11\n\tpop r10\n\tpush r11\n\tpush r10\n"
+		buf += "\tpop r11\n"
+		buf += "\tpop r10\n"
+		buf += "\tpush r11\n"
+		buf += "\tpush r10\n"
+
 	case "2swap":
-		return "\tpop rax\n\tpop rsi\n\tpop r11\n\tpop r10\n\tpush rsi\n\tpush rax\n\tpush r10\n\tpush r11\n"
+		buf += "\tpop rax\n"
+		buf += "\tpop rsi\n"
+		buf += "\tpop r11\n"
+		buf += "\tpop r10\n"
+		buf += "\tpush rsi\n"
+		buf += "\tpush rax\n"
+		buf += "\tpush r10\n"
+		buf += "\tpush r11\n"
+
 	case "if":
-		return fmt.Sprintf("\tpop r10\n\tcmp r10, 0\n\tje %s\n", op.crosslabel)
+		buf += "\tpop r10\n"
+		buf += "\tcmp r10, 0\n"
+		buf += fmt.Sprintf("\tje %s\n", op.crosslabel)
+
 	case "else":
-		return fmt.Sprintf("\tjmp %s\n%s:\n", op.crosslabel, op.label)
+		buf += fmt.Sprintf("\tjmp %s\n%s:\n", op.crosslabel, op.label)
+
 	case "fi":
-		return fmt.Sprintf("%s:\n", op.label)
+		buf += fmt.Sprintf("%s:\n", op.label)
+
 	case "while":
-		return fmt.Sprintf("%s:\n", op.label)
+		buf += fmt.Sprintf("%s:\n", op.label)
 	case "do":
-		return fmt.Sprintf("\tpop r10\n\tcmp r10, 0\n\tje %s\n", op.crosslabel)
+		buf += "\tpop r10\n"
+		buf += "\tcmp r10, 0\n"
+		buf += fmt.Sprintf("\tje %s\n", op.crosslabel)
+
 	case "done":
-		return fmt.Sprintf("\tjmp %s\n%s:\n", op.crosslabel, op.label)
+		buf += fmt.Sprintf("\tjmp %s\n", op.crosslabel)
+		buf += fmt.Sprintf("%s:\n", op.label)
+
 	case "string":
-		return fmt.Sprintf("\tpush %d\n\tpush %s\n", op.intData, op.label)
+		buf += fmt.Sprintf("\tpush %d\n", op.intData)
+		buf += fmt.Sprintf("\tpush %s\n", op.label)
+
 	case "number":
-		return fmt.Sprintf("\tpush %d\n", op.intData)
+		buf += fmt.Sprintf("\tpush %d\n", op.intData)
+
 	case "syscall":
-		/* FIXME: make it more consise */
-		buf := ""
+		/* FIXME: Consider making it more consise */
 		switch op.intData {
 		case 7:
 			buf += "\tpop rax\n"
@@ -331,20 +390,24 @@ func X86_64map(op Operation) string{
 
 		buf += "\tsyscall\n"
 		buf += "\tpush rax\n"
-		return buf
+
+	default:
+		panic("mapX86_64linux unreachable")
 	}
-	panic("X86_64map unreachable")
+
+	return buf
 }
 
-func compileX86_64(ops[] Operation) {
+func compile(ops[] Operation) {
+	comment_str := ";;"
 	var strings[][2] string
 	print("section .text")
 	print("global _start")
 	print("_start:")
 
 	for i := 0; i < len(ops); i++ {
-		fmt.Printf("\t;; %s\n", ops[i].name)
-		fmt.Printf(X86_64map(ops[i]))
+		fmt.Printf("\t%s %s\n", comment_str, ops[i].name)
+		fmt.Printf(mapX86_64linux(ops[i]))
 		if (ops[i].name == "string") {
 			strings = append(strings, [2]string{ops[i].strData, ops[i].label})
 		}
@@ -447,5 +510,5 @@ func main() {
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
 	ops := parse(tokens)
-	compileX86_64(ops)
+	compile(ops)
 }
