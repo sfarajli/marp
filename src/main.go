@@ -23,6 +23,7 @@ type Operation struct {
 /* TODO: Add file name */
 type Token struct {
 	str string
+	file string
 	line int
 	offset int
 }
@@ -71,7 +72,7 @@ func tokenize(path string) []Token {
 			if buf == "" {
 				continue
 			}
-			tokenBuf :=  Token{str: buf, line: lineIndex + 1, offset: offset - len(buf) + 1}
+			tokenBuf :=  Token{str: buf, file: path, line: lineIndex + 1, offset: offset - len(buf) + 1}
 			tokens = append(tokens, tokenBuf)
 			buf = ""
 		}
@@ -246,7 +247,7 @@ func parse(tokens[]Token) []Operation {
 		}
 
 		if op.name ==  "" {
-			fmt.Fprintf(os.Stderr, "Undefined word `%s` at %d:%d\n", tokens[i].str, tokens[i].line, tokens[i].offset)
+			fmt.Fprintf(os.Stderr, "Undefined word `%s` %s: %d:%d\n", tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
 			os.Exit(1)
 		}
 
