@@ -252,6 +252,92 @@ done:
 func mapX86_64linux(op Operation) string{
 	buf := ""
 	switch op.name {
+	case "boilerPlateStart":
+		buf += "section .text\n"
+		buf += "global _start\n"
+		buf += "_start:\n"
+
+	case "boilerPlateExit":
+		buf += "mov rdi, 0\n"
+		buf += "mov rax, 60\n"
+		buf += "syscall\n"
+
+	case "dumpFunc":
+		buf += ".dump:\n"
+		buf += "\tpush    rbp\n"
+		buf += "\tmov     rbp, rsp\n"
+		buf += "\tsub     rsp, 48\n"
+		buf += "\tmov     DWORD  [rbp-36], edi\n"
+		buf += "\tmov     QWORD  [rbp-32], 0\n"
+		buf += "\tmov     QWORD  [rbp-24], 0\n"
+		buf += "\tmov     DWORD  [rbp-16], 0\n"
+		buf += "\tmov     BYTE  [rbp-13], 10\n"
+		buf += "\tmov     DWORD  [rbp-4], 18\n"
+		buf += "\tmov     DWORD  [rbp-8], 0\n"
+		buf += "\tcmp     DWORD  [rbp-36], 0\n"
+		buf += "\tjns     .L3\n"
+		buf += "\tneg     DWORD  [rbp-36]\n"
+		buf += "\tmov     DWORD  [rbp-8], 1\n"
+		buf += ".L3:\n"
+		buf += "\tmov     edx, DWORD  [rbp-36]\n"
+		buf += "\tmovsx   rax, edx\n"
+		buf += "\timul    rax, rax, 1717986919\n"
+		buf += "\tshr     rax, 32\n"
+		buf += "\tmov     ecx, eax\n"
+		buf += "\tsar     ecx, 2\n"
+		buf += "\tmov     eax, edx\n"
+		buf += "\tsar     eax, 31\n"
+		buf += "\tsub     ecx, eax\n"
+		buf += "\tmov     eax, ecx\n"
+		buf += "\tsal     eax, 2\n"
+		buf += "\tadd     eax, ecx\n"
+		buf += "\tadd     eax, eax\n"
+		buf += "\tsub     edx, eax\n"
+		buf += "\tmov     DWORD  [rbp-12], edx\n"
+		buf += "\tmov     eax, DWORD  [rbp-12]\n"
+		buf += "\tadd     eax, 48\n"
+		buf += "\tmov     edx, eax\n"
+		buf += "\tmov     eax, DWORD  [rbp-4]\n"
+		buf += "\tcdqe\n"
+		buf += "\tmov     BYTE  [rbp-32+rax], dl\n"
+		buf += "\tmov     eax, DWORD  [rbp-12]\n"
+		buf += "\tsub     DWORD  [rbp-36], eax\n"
+		buf += "\tmov     eax, DWORD  [rbp-36]\n"
+		buf += "\tmovsx   rdx, eax\n"
+		buf += "\timul    rdx, rdx, 1717986919\n"
+		buf += "\tshr     rdx, 32\n"
+		buf += "\tmov     ecx, edx\n"
+		buf += "\tsar     ecx, 2\n"
+		buf += "\tcdq\n"
+		buf += "\tmov     eax, ecx\n"
+		buf += "\tsub     eax, edx\n"
+		buf += "\tmov     DWORD  [rbp-36], eax\n"
+		buf += "\tsub     DWORD  [rbp-4], 1\n"
+		buf += "\tcmp     DWORD  [rbp-36], 0\n"
+		buf += "\tjne     .L3\n"
+		buf += "\tcmp     DWORD  [rbp-8], 0\n"
+		buf += "\tje      .L4\n"
+		buf += "\tmov     eax, DWORD  [rbp-4]\n"
+		buf += "\tcdqe\n"
+		buf += "\tmov     BYTE  [rbp-32+rax], 45\n"
+		buf += "\tsub     DWORD  [rbp-4], 1\n"
+		buf += ".L4:\n"
+		buf += "\tmov     eax, 20\n"
+		buf += "\tsub     eax, DWORD  [rbp-4]\n"
+		buf += "\tcdqe\n"
+		buf += "\tmov     edx, DWORD  [rbp-4]\n"
+		buf += "\tmovsx   rdx, edx\n"
+		buf += "\tlea     rcx, [rbp-32]\n"
+		buf += "\tadd     rcx, rdx\n"
+		buf += "\tmov     rdx, rax\n"
+		buf += "\tmov     rsi, rcx\n"
+		buf += "\tmov     edi, 1\n"
+		buf += "\tmov 	rax, 1\n"
+		buf += "\tsyscall\n"
+		buf += "\tnop\n"
+		buf += "\tleave\n"
+		buf += "\tret\n"
+
 	case "plus":
 		buf += "\tpop rsi\n"
 		buf += "\tpop rax\n"
@@ -401,97 +487,24 @@ func mapX86_64linux(op Operation) string{
 func compile(ops[] Operation) {
 	comment_str := ";;"
 	var strings[][2] string
-	print("section .text")
-	print("global _start")
-	print("_start:")
+	printDumpFunc := false
+	fmt.Printf(mapX86_64linux(Operation{name: "boilerPlateStart"}))
 
 	for i := 0; i < len(ops); i++ {
 		fmt.Printf("\t%s %s\n", comment_str, ops[i].name)
 		fmt.Printf(mapX86_64linux(ops[i]))
-		if (ops[i].name == "string") {
+		switch ops[i].name {
+		case "string":
 			strings = append(strings, [2]string{ops[i].strData, ops[i].label})
+		case "dump":
+			printDumpFunc = true
 		}
 	}
 
-	print("	;; EXIT")
-	print("	mov rdi, 0")
-	print("	mov rax, 60")
-	print("	syscall")
-
-	print(".dump:");
-	print("	push    rbp")
-	print("	mov     rbp, rsp")
-	print("	sub     rsp, 48")
-	print("	mov     DWORD  [rbp-36], edi")
-	print("	mov     QWORD  [rbp-32], 0")
-	print("	mov     QWORD  [rbp-24], 0")
-	print("	mov     DWORD  [rbp-16], 0")
-	print("	mov     BYTE  [rbp-13], 10")
-	print("	mov     DWORD  [rbp-4], 18")
-	print("	mov     DWORD  [rbp-8], 0")
-	print("	cmp     DWORD  [rbp-36], 0")
-	print("	jns     .L3")
-	print("	neg     DWORD  [rbp-36]")
-	print("	mov     DWORD  [rbp-8], 1")
-	print(".L3:")
-	print("	mov     edx, DWORD  [rbp-36]")
-	print("	movsx   rax, edx")
-	print("	imul    rax, rax, 1717986919")
-	print("	shr     rax, 32")
-	print("	mov     ecx, eax")
-	print("	sar     ecx, 2")
-	print("	mov     eax, edx")
-	print("	sar     eax, 31")
-	print("	sub     ecx, eax")
-	print("	mov     eax, ecx")
-	print("	sal     eax, 2")
-	print("	add     eax, ecx")
-	print("	add     eax, eax")
-	print("	sub     edx, eax")
-	print("	mov     DWORD  [rbp-12], edx")
-	print("	mov     eax, DWORD  [rbp-12]")
-	print("	add     eax, 48")
-	print("	mov     edx, eax")
-	print("	mov     eax, DWORD  [rbp-4]")
-	print("	cdqe")
-	print("	mov     BYTE  [rbp-32+rax], dl")
-	print("	mov     eax, DWORD  [rbp-12]")
-	print("	sub     DWORD  [rbp-36], eax")
-	print("	mov     eax, DWORD  [rbp-36]")
-	print("	movsx   rdx, eax")
-	print("	imul    rdx, rdx, 1717986919")
-	print("	shr     rdx, 32")
-	print("	mov     ecx, edx")
-	print("	sar     ecx, 2")
-	print("	cdq")
-	print("	mov     eax, ecx")
-	print("	sub     eax, edx")
-	print("	mov     DWORD  [rbp-36], eax")
-	print("	sub     DWORD  [rbp-4], 1")
-	print("	cmp     DWORD  [rbp-36], 0")
-	print("	jne     .L3")
-	print("	cmp     DWORD  [rbp-8], 0")
-	print("	je      .L4")
-	print("	mov     eax, DWORD  [rbp-4]")
-	print("	cdqe")
-	print("	mov     BYTE  [rbp-32+rax], 45")
-	print("	sub     DWORD  [rbp-4], 1")
-	print(".L4:")
-	print("	mov     eax, 20")
-	print("	sub     eax, DWORD  [rbp-4]")
-	print("	cdqe")
-	print("	mov     edx, DWORD  [rbp-4]")
-	print("	movsx   rdx, edx")
-	print("	lea     rcx, [rbp-32]")
-	print("	add     rcx, rdx")
-	print("	mov     rdx, rax")
-	print("	mov     rsi, rcx")
-	print("	mov     edi, 1")
-	print("	mov 	rax, 1")
-	print("	syscall")
-	print("	nop")
-	print("	leave")
-	print("	ret")
+	fmt.Printf(mapX86_64linux(Operation{name: "boilerPlateExit"}))
+	if printDumpFunc {
+		fmt.Printf(mapX86_64linux(Operation{name: "dumpFunc"}))
+	}
 
 	print("section .data")
 	for i := 0; i < len(strings); i++ {
