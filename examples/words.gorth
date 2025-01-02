@@ -1,0 +1,7 @@
+# Prints out one
+
+word printOutOne
+	1 dump
+end
+
+printOutOne

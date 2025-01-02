@@ -1,0 +1,4 @@
+# Prints out the value 5
+
+const CON 5
+CON dump

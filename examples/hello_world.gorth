@@ -1,0 +1,5 @@
+# Prints out "Hello, World!"
+
+include "../lib/stdlib.gorth"
+
+"Hello, World!" write
