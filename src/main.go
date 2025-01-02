@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
+	"bufio"
 	"os"
+	"io"
 )
 
 var print = fmt.Println
@@ -487,15 +490,15 @@ func mapX86_64linux(op Operation) string{
 	return buf
 }
 
-func compile(ops[] Operation) {
+func compile(ops[] Operation, w io.Writer) {
 	comment_str := ";;"
 	var strings[][2] string
 	printDumpFunc := false
-	fmt.Printf(mapX86_64linux(Operation{name: "boilerPlateStart"}))
+	fmt.Fprintf(w, mapX86_64linux(Operation{name: "boilerPlateStart"}))
 
 	for i := 0; i < len(ops); i++ {
-		fmt.Printf("\t%s %s\n", comment_str, ops[i].name)
-		fmt.Printf(mapX86_64linux(ops[i]))
+		fmt.Fprintf(w, "\t%s %s\n", comment_str, ops[i].name)
+		fmt.Fprintf(w, mapX86_64linux(ops[i]))
 		switch ops[i].name {
 		case "string":
 			strings = append(strings, [2]string{ops[i].strData, ops[i].label})
@@ -504,27 +507,43 @@ func compile(ops[] Operation) {
 		}
 	}
 
-	fmt.Printf(mapX86_64linux(Operation{name: "boilerPlateExit"}))
+	fmt.Fprintf(w, mapX86_64linux(Operation{name: "boilerPlateExit"}))
 	if printDumpFunc {
-		fmt.Printf(mapX86_64linux(Operation{name: "dumpFunc"}))
+		fmt.Fprintf(w, mapX86_64linux(Operation{name: "dumpFunc"}))
 	}
 
-	print("section .data")
+	fmt.Fprintf(w, "section .data\n")
 	for i := 0; i < len(strings); i++ {
-		fmt.Printf("%s: db %s, 10\n", strings[i][1], strings[i][0])
+		fmt.Fprintf(w, "%s: db %s, 10\n", strings[i][1], strings[i][0])
 	}
 }
 
 func main() {
 	argv := os.Args;
 	argc := len(argv);
+	suffix := ".gorth"
 
-	if (argc != 2) {
+	if argc != 2 {
+		/* FIXME: better error message*/
 		panic("Invaid usage");
 	}
 
+	srcFile := argv[argc - 1]
+	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 7 {
+		/* FIXME: better error message*/
+		panic("Doesn't look like a gorth file")
+	}
+	assemFile := srcFile[:len(srcFile) - 6] + ".s"
+	file, err := os.Create(assemFile)
+	if err != nil {
+		/* FIXME: better error message*/
+		panic("failed to create file")
+	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
 	ops := parse(tokens)
-	compile(ops)
+	/* FIXME: check for error */
+	w := bufio.NewWriter(file)
+	compile(ops, w)
+	w.Flush()
 }
