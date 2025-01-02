@@ -246,7 +246,8 @@ func parse(tokens[]Token) []Operation {
 		}
 
 		if op.name ==  "" {
-			panic ("invalid word")
+			fmt.Fprintf(os.Stderr, "Undefined word `%s` at %d:%d\n", tokens[i].str, tokens[i].line, tokens[i].offset)
+			os.Exit(1)
 		}
 
 		ops = append(ops, op)
