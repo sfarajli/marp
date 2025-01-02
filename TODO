@@ -1,9 +1,11 @@
-- Separate library functions from the compiler
-- Add const
-- Add Include
+- Add Memory access and variables
+- call nasm and ld from the binary
++ write assembly to a file instead of stdout
++ Separate library functions from the compiler
++ Add const
++ Add Include
 + Add Strings
 + Add Comments
 + Add systemcalls
-- Add Memory access and variables
 + Add build system
 + Add compile option
