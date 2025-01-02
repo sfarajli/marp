@@ -93,12 +93,15 @@ func preprocess(tokens[] Token) []Token {
 			/* FIXME: Better error message */
 			panic("include must be wrapped with `\"`")
 		}
-		rawName := tokens[i + 1].str
-		fileName := rawName[1:len(rawName) - 1]
+		tmp := tokens[i + 1].str
+		includeFile := tmp[1:len(tmp) - 1] /* Clear out `"` at the beginning and at the end */
 
-		incTokens := tokenize(fileName)
-		firstHalf := tokens[:i]
-		secondHalf := tokens[i + 2:]
+		incTokens := tokenize(includeFile)
+		firstHalf := make([]Token, len(tokens[:i]))
+	 	secondHalf := make([]Token, len(tokens[i + 2:]))
+		copy(firstHalf, tokens[:i])
+		copy(secondHalf, tokens[i + 2:])
+
 		tokens = append(firstHalf, incTokens...)
 		tokens = append(tokens, secondHalf...)
 	}
