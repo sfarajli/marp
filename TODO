@@ -1,4 +1,4 @@
-- Add Memory access and variables
++ Add Memory access and variables
 - call nasm and ld from the binary
 + write assembly to a file instead of stdout
 + Separate library functions from the compiler
