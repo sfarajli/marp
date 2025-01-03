@@ -10,8 +10,6 @@ import (
 	"io"
 )
 
-var print = fmt.Println
-
 type Operation struct {
 	name string
 	label string
@@ -20,7 +18,6 @@ type Operation struct {
 	intData int
 }
 
-/* TODO: Add file name */
 type Token struct {
 	str string
 	file string
@@ -117,6 +114,7 @@ var looplabel int = 0
 var stringlabel int = 0
 func parse(tokens[]Token) []Operation {
 	var ops[] Operation
+	var variables[] string
 	var externalWords[] Word
 	var iflabels[] int
 	var looplabels[] int
@@ -177,6 +175,64 @@ func parse(tokens[]Token) []Operation {
 			op.crosslabel = fmt.Sprintf(".loop%d", looplabels[len(looplabels) - 1])
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
+
+		case "push":
+			if i + 1 >= len(tokens) {
+				/* FIXME: Better error message */
+				panic("invalid push usage")
+			}
+			variableIndex := -1
+			for y := 0; y < len(variables); y++ {
+				if tokens[i + 1].str == variables[y] {
+					variableIndex = y
+				}
+			}
+			if variableIndex == -1 {
+				panic("undeclared variable")
+			}
+			op.name = "push"
+			op.strData = variables[variableIndex]
+			i++
+			/* FIXME: better solution */
+			ops = append(ops, op)
+			continue
+
+
+		case "pull":
+			if i + 1 >= len(tokens) {
+				/* FIXME: Better error message */
+				panic("invalid pull usage")
+			}
+			variableIndex := -1
+			for y := 0; y < len(variables); y++ {
+				if tokens[i + 1].str == variables[y] {
+					variableIndex = y
+				}
+			}
+			if variableIndex == -1 {
+				panic("undeclared variable")
+			}
+			op.name = "pull"
+			op.strData = variables[variableIndex]
+			i++
+			/* FIXME: better solution */
+			ops = append(ops, op)
+			continue
+
+
+		case "var":
+			if i + 1 >= len(tokens) {
+				/* FIXME: Better error message */
+				panic("invalid var usage")
+			}
+			op.name = "variable"
+			op.strData = tokens[i + 1].str
+			variables = append(variables, tokens[i + 1].str)
+			i++
+			/* FIXME: better solution */
+			ops = append(ops, op)
+			continue
+
 
 		case "const":
 			if i + 2 >= len(tokens) {
@@ -245,6 +301,8 @@ func parse(tokens[]Token) []Operation {
 			/* FIXME: Find an alternative to goto */
 			goto done
 		}
+
+		/* FIXME: check for variable names that comes without push or pull */
 
 		if op.name ==  "" {
 			fmt.Fprintf(os.Stderr, "Undefined word `%s` %s: %d:%d\n", tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
@@ -442,6 +500,14 @@ func mapX86_64linux(op Operation) string{
 	case "number":
 		buf += fmt.Sprintf("\tpush %d\n", op.intData)
 
+	case "push":
+		buf += "\tpop r10\n"
+		buf += fmt.Sprintf("\tmov [%s], r10\n", op.strData)
+
+	case "pull":
+		buf += fmt.Sprintf("\tmov r10, [%s]\n", op.strData)
+		buf += "\tpush r10\n"
+
 	case "syscall":
 		/* FIXME: Consider making it more consise */
 		switch op.intData {
@@ -495,23 +561,33 @@ func mapX86_64linux(op Operation) string{
 func compile(ops[] Operation, w io.Writer) {
 	comment_str := ";;"
 	var strings[][2] string
+	var variables[] string
 	printDumpFunc := false
 	fmt.Fprintf(w, mapX86_64linux(Operation{name: "boilerPlateStart"}))
 
 	for i := 0; i < len(ops); i++ {
-		fmt.Fprintf(w, "\t%s %s\n", comment_str, ops[i].name)
-		fmt.Fprintf(w, mapX86_64linux(ops[i]))
 		switch ops[i].name {
 		case "string":
 			strings = append(strings, [2]string{ops[i].strData, ops[i].label})
 		case "dump":
 			printDumpFunc = true
+		case "variable":
+			variables = append(variables, ops[i].strData)
+			continue
 		}
+
+		fmt.Fprintf(w, "\t%s %s\n", comment_str, ops[i].name)
+		fmt.Fprintf(w, mapX86_64linux(ops[i]))
 	}
 
 	fmt.Fprintf(w, mapX86_64linux(Operation{name: "boilerPlateExit"}))
 	if printDumpFunc {
 		fmt.Fprintf(w, mapX86_64linux(Operation{name: "dumpFunc"}))
+	}
+
+	fmt.Fprintf(w, "section .bss\n")
+	for i := 0; i < len(variables); i++ {
+		fmt.Fprintf(w, "%s: resb 8\n", variables[i])
 	}
 
 	fmt.Fprintf(w, "section .data\n")
