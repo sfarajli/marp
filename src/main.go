@@ -266,9 +266,9 @@ func mapX86_64linux(op Operation) string{
 		buf += "_start:\n"
 
 	case "boilerPlateExit":
-		buf += "mov rdi, 0\n"
-		buf += "mov rax, 60\n"
-		buf += "syscall\n"
+		buf += "\tmov rdi, 0\n"
+		buf += "\tmov rax, 60\n"
+		buf += "\tsyscall\n"
 
 	case "dumpFunc":
 		buf += ".dump:\n"
