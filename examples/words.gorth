@@ -1,6 +1,6 @@
 # Prints out one
 
-word printOutOne
+define printOutOne
 	1 dump
 end
 
