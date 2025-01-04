@@ -120,7 +120,7 @@ func preprocess(rawTokens[] Token) []Token {
 			}
 
 			tmp := rawTokens[i + 1].str
-			incFile := tmp[1:len(tmp) -1 ] /* get rid of the `"` at the beginning and at the end */
+			incFile := tmp[1:len(tmp) - 1] /* get rid of the `"` at the beginning and at the end */
 			rawTokens = slices.Insert(rawTokens, i + 1, tokenize(incFile)...)
 			incDepth++
 			continue
@@ -136,6 +136,7 @@ func preprocess(rawTokens[] Token) []Token {
 			if macros[y].name == tokens[i].str {
 				tokens = append(tokens[:i], tokens[i + 1:]...)
 				tokens = slices.Insert(tokens, i, macros[y].tokens...)
+				i--
 			}
 		}
 	}
