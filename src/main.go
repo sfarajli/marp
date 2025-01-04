@@ -120,6 +120,7 @@ func preprocess(rawTokens[] Token) []Token {
 			}
 
 			tmp := rawTokens[i + 1].str
+			i++
 			incFile := tmp[1:len(tmp) - 1] /* get rid of the `"` at the beginning and at the end */
 			rawTokens = slices.Insert(rawTokens, i + 1, tokenize(incFile)...)
 			incDepth++
@@ -602,6 +603,7 @@ func main() {
 	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
+	fmt.Println(tokens)
 	ops := parse(tokens)
 	/* FIXME: check for error */
 	w := bufio.NewWriter(file)
