@@ -1,5 +1,6 @@
 + Add Memory access and variables
 - call nasm and ld from the binary
+- Handle recursive includes
 + write assembly to a file instead of stdout
 + Separate library functions from the compiler
 + Add const
