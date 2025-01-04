@@ -31,8 +31,6 @@ type Macro struct {
 	tokens[] Token
 }
 
-/* FIXME: better name */
-
 func tokenize(path string) []Token {
 	var tokens []Token;
 
@@ -83,6 +81,8 @@ func tokenize(path string) []Token {
 }
 /* FIXME: handle recursive includes */
 func preprocess(rawTokens[] Token) []Token {
+	incDepth := 0
+	const incDepthLim = 200
 	var tokens[] Token
 	var macros[] Macro
 	for i := 0; i < len(rawTokens); i++ {
@@ -115,10 +115,14 @@ func preprocess(rawTokens[] Token) []Token {
 			if rawTokens[i + 1].str[0] != '"' {
 				panic("include file must be wrapped with quotes")
 			}
+			if incDepth == incDepthLim {
+				panic("nested depth exceeds 200")
+			}
 
 			tmp := rawTokens[i + 1].str
 			incFile := tmp[1:len(tmp) -1 ] /* get rid of the `"` at the beginning and at the end */
 			rawTokens = slices.Insert(rawTokens, i + 1, tokenize(incFile)...)
+			incDepth++
 			continue
 
 		case "end":
