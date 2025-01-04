@@ -603,7 +603,6 @@ func main() {
 	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
-	fmt.Println(tokens)
 	ops := parse(tokens)
 	/* FIXME: check for error */
 	w := bufio.NewWriter(file)
