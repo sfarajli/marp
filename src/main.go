@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"os"
 	"io"
+	"slices"
 )
 
 type Operation struct {
@@ -25,11 +26,12 @@ type Token struct {
 	offset int
 }
 
-type Word struct {
-	typ string
+type Macro struct {
 	name string
 	tokens[] Token
 }
+
+/* FIXME: better name */
 
 func tokenize(path string) []Token {
 	var tokens []Token;
@@ -79,45 +81,72 @@ func tokenize(path string) []Token {
 	}
 	return tokens
 }
-
 /* FIXME: handle recursive includes */
-func preprocess(tokens[] Token) []Token {
-	for i := 0; i < len(tokens); i++ {
-		if tokens[i].str != "include" {
+func preprocess(rawTokens[] Token) []Token {
+	var tokens[] Token
+	var macros[] Macro
+	for i := 0; i < len(rawTokens); i++ {
+		switch rawTokens[i].str {
+		case "define":
+			var macroBuf Macro
+			if i + 1 >= len(rawTokens) {
+				/*FIXME: better error message */
+				panic("invalid define syntax")
+			}
+
+			macroBuf.name = rawTokens[i + 1].str
+			for i = i + 2; i < len(rawTokens); i++ {
+				if rawTokens[i].str == "end" {
+					break
+				}
+				macroBuf.tokens = append(macroBuf.tokens, rawTokens[i])
+			}
+			if i == len(rawTokens) {
+				/*FIXME: better error message */
+				panic("expected `end` at the end")
+			}
+			macros = append(macros, macroBuf)
+			continue
+
+		case "include":
+			if i + 1 >= len(rawTokens) {
+				panic("invalid syntax for include")
+			}
+			if rawTokens[i + 1].str[0] != '"' {
+				panic("include file must be wrapped with quotes")
+			}
+
+			tmp := rawTokens[i + 1].str
+			incFile := tmp[1:len(tmp) -1 ] /* get rid of the `"` at the beginning and at the end */
+			rawTokens = slices.Insert(rawTokens, i + 1, tokenize(incFile)...)
+			continue
+
+		case "end":
 			continue
 		}
-		if i + 1 >= len(tokens) {
-			/* FIXME: Better error message */
-			panic("invalid include syntax")
-		}
-		if tokens[i + 1].str[0] != '"' {
-			/* FIXME: Better error message */
-			panic("include must be wrapped with `\"`")
-		}
-		tmp := tokens[i + 1].str
-		includeFile := tmp[1:len(tmp) - 1] /* Clear out `"` at the beginning and at the end */
+		tokens = append(tokens, rawTokens[i])
+	}
 
-		incTokens := tokenize(includeFile)
-		firstHalf := make([]Token, len(tokens[:i]))
-	 	secondHalf := make([]Token, len(tokens[i + 2:]))
-		copy(firstHalf, tokens[:i])
-		copy(secondHalf, tokens[i + 2:])
-
-		tokens = append(firstHalf, incTokens...)
-		tokens = append(tokens, secondHalf...)
+	for i := 0; i < len(tokens); i++ {
+		for y := 0; y < len(macros); y++ {
+			if macros[y].name == tokens[i].str {
+				/* Expand macro in the middle of tokens*/
+				tokens = tokens[:len(tokens) - 1]
+				tokens = slices.Insert(tokens, i, macros[y].tokens...)
+			}
+		}
 	}
 	return tokens
 }
 
-var iflabel int = 0
-var looplabel int = 0
-var stringlabel int = 0
 func parse(tokens[]Token) []Operation {
 	var ops[] Operation
 	var variables[] string
-	var externalWords[] Word
 	var iflabels[] int
 	var looplabels[] int
+	var iflabel int = 0
+	var looplabel int = 0
+	var stringlabel int = 0
 
 	for i := 0; i < len(tokens); i++ {
 		var op Operation
@@ -197,7 +226,6 @@ func parse(tokens[]Token) []Operation {
 			ops = append(ops, op)
 			continue
 
-
 		case "pull":
 			if i + 1 >= len(tokens) {
 				/* FIXME: Better error message */
@@ -219,7 +247,6 @@ func parse(tokens[]Token) []Operation {
 			ops = append(ops, op)
 			continue
 
-
 		case "var":
 			if i + 1 >= len(tokens) {
 				/* FIXME: Better error message */
@@ -231,42 +258,6 @@ func parse(tokens[]Token) []Operation {
 			i++
 			/* FIXME: better solution */
 			ops = append(ops, op)
-			continue
-
-
-		case "const":
-			if i + 2 >= len(tokens) {
-				/* FIXME: Better error message */
-				panic("invalid const usage")
-			}
-			name := tokens[i + 1].str
-			token := tokens[i + 2]
-			_, err := strconv.Atoi(token.str)
-			/* FIXME: add character as well */
-			if err != nil && token.str[0] != '"' {
-				/* FIXME: Better error message */
-				panic("Can only define strings and numbers with const")
-			}
-			externalWords = append(externalWords, Word{typ: "const", name: name, tokens: []Token{token}})
-			i += 2
-			continue
-
-		case "word":
-			var tokBuf[] Token
-			if i + 1 >= len(tokens) {
-				/* FIXME: Better error message */
-				panic("invalid word usage")
-			}
-			name := tokens[i + 1].str
-			i += 2
-			for ;i < len(tokens) && tokens[i].str != "end"; i++ {
-				tokBuf = append(tokBuf, tokens[i])
-			}
-			if i == len(tokens) {
-				/* FIXME: Better error message */
-				panic("missing end")
-			}
-			externalWords = append(externalWords, Word{typ: "word", name: name, tokens: tokBuf})
 			continue
 		}
 
@@ -291,17 +282,6 @@ func parse(tokens[]Token) []Operation {
 			op.name = "syscall"
 			op.intData = parameters
 		}
-
-		for y := 0; y < len(externalWords); y++ {
-			if tokens[i].str != externalWords[y].name {
-				continue
-			}
-			opsBuf := parse(externalWords[y].tokens)
-			ops = append(ops, opsBuf...)
-			/* FIXME: Find an alternative to goto */
-			goto done
-		}
-
 		/* FIXME: check for variable names that comes without push or pull */
 
 		if op.name ==  "" {
@@ -310,7 +290,6 @@ func parse(tokens[]Token) []Operation {
 		}
 
 		ops = append(ops, op)
-done:
 	}
 	return ops
 }
@@ -619,6 +598,8 @@ func main() {
 	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
+	// fmt.Println(tokens)
+	// os.Exit(0)
 	ops := parse(tokens)
 	/* FIXME: check for error */
 	w := bufio.NewWriter(file)
