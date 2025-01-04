@@ -134,8 +134,7 @@ func preprocess(rawTokens[] Token) []Token {
 	for i := 0; i < len(tokens); i++ {
 		for y := 0; y < len(macros); y++ {
 			if macros[y].name == tokens[i].str {
-				/* Expand macro in the middle of tokens*/
-				tokens = tokens[:len(tokens) - 1]
+				tokens = append(tokens[:i], tokens[i + 1:]...)
 				tokens = slices.Insert(tokens, i, macros[y].tokens...)
 			}
 		}
@@ -602,8 +601,6 @@ func main() {
 	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
-	// fmt.Println(tokens)
-	// os.Exit(0)
 	ops := parse(tokens)
 	/* FIXME: check for error */
 	w := bufio.NewWriter(file)
