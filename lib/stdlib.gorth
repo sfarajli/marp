@@ -1,7 +1,7 @@
-word write
+define write
 	1 1 syscall.4 drop
 end
 
-word exit
+define exit
 	60 syscall.2 drop
 end
