@@ -583,23 +583,29 @@ func compile(ops[] Operation, w io.Writer) {
 func main() {
 	argv := os.Args;
 	argc := len(argv);
+	progname := argv[0]
 	suffix := ".gorth"
 
 	if argc != 2 {
-		/* FIXME: better error message*/
-		panic("Invaid usage");
+		fmt.Fprintf(os.Stderr, "%s: Error: expected one input file.\n", progname)
+		os.Exit(1)
 	}
 
 	srcFile := argv[argc - 1]
 	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 7 {
-		/* FIXME: better error message*/
-		panic("Doesn't look like a gorth file")
+		fmt.Fprintf(os.Stderr, "%s: Error: invalid file format '%s'.\n", progname, srcFile)
+		os.Exit(1)
+	}
+	_, err := os.Stat(srcFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: Error: failed to stat file '%s'.\n", progname, srcFile)
+		os.Exit(1)
 	}
 	assemFile := srcFile[:len(srcFile) - 6] + ".s"
 	file, err := os.Create(assemFile)
 	if err != nil {
 		/* FIXME: better error message*/
-		panic("failed to create file")
+		fmt.Fprintf(os.Stderr, "%s: Error: failed create output file '%s'.\n", progname, file)
 	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
