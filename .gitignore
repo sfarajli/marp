@@ -1,6 +1,5 @@
 test-asm
 test.gorth
 test
-Makefile
 gorth
 GNUmakefile
