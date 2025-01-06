@@ -603,7 +603,7 @@ func main() {
 	}
 	_, err := os.Stat(srcFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: error: failed to stat file '%s'.\n", progname, srcFile)
+		fmt.Fprintf(os.Stderr, "%s: error: %s.\n", progname, err)
 		os.Exit(1)
 	}
 	assemFile := srcFile[:len(srcFile) - 6] + ".s"
