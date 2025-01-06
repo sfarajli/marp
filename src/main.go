@@ -548,8 +548,8 @@ func mapX86_64linux(op Operation) string{
 	return buf
 }
 
-func compile(ops[] Operation, w io.Writer) {
-	comment_str := ";;"
+func generateX86_64(ops[] Operation, w io.Writer) {
+	assemblerComment := ";;"
 	var strings[][2] string
 	var variables[] string
 	printDumpFunc := false
@@ -566,7 +566,7 @@ func compile(ops[] Operation, w io.Writer) {
 			continue
 		}
 
-		fmt.Fprintf(w, "\t%s %s\n", comment_str, ops[i].name)
+		fmt.Fprintf(w, "\t%s %s\n", assemblerComment, ops[i].name)
 		fmt.Fprintf(w, mapX86_64linux(ops[i]))
 	}
 
@@ -617,6 +617,6 @@ func main() {
 	ops := parse(tokens)
 	/* FIXME: check for error */
 	w := bufio.NewWriter(file)
-	compile(ops, w)
+	generateX86_64(ops, w)
 	w.Flush()
 }
