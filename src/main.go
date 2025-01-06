@@ -31,13 +31,16 @@ type Macro struct {
 	tokens[] Token
 }
 
+var progname string;
+
 func tokenize(path string) []Token {
 	var tokens []Token;
 
 	reg := regexp.MustCompile(`\n`)
 	dat, err := os.ReadFile(path);
 	if (err != nil) {
-		panic("Failed to read file");
+		fmt.Fprintf(os.Stderr, "%s: Error: failed read file '%s'.\n", progname, path)
+		os.Exit(1)
 	}
 
 	lines := reg.Split(string(dat), -1);
@@ -74,12 +77,13 @@ func tokenize(path string) []Token {
 			buf = ""
 		}
 		if isStr {
-			panic("invalid syntax")
+			fmt.Fprintf(os.Stderr, "%s: Error: expected `\"`: '%s'.\n", progname, path)
+			os.Exit(1)
 		}
 	}
 	return tokens
 }
-/* FIXME: handle recursive includes */
+
 func preprocess(rawTokens[] Token) []Token {
 	incDepth := 0
 	const incDepthLim = 200
@@ -90,8 +94,9 @@ func preprocess(rawTokens[] Token) []Token {
 		case "define":
 			var macroBuf Macro
 			if i + 1 >= len(rawTokens) {
-				/*FIXME: better error message */
-				panic("invalid define syntax")
+				fmt.Fprintf(os.Stderr, "%s: Error: invalid syntax for define: %s: %d:%d.\n",
+					progname, rawTokens[i].file, rawTokens[i].line, rawTokens[i].offset)
+				os.Exit(1)
 			}
 
 			macroBuf.name = rawTokens[i + 1].str
@@ -102,21 +107,27 @@ func preprocess(rawTokens[] Token) []Token {
 				macroBuf.tokens = append(macroBuf.tokens, rawTokens[i])
 			}
 			if i == len(rawTokens) {
-				/*FIXME: better error message */
-				panic("expected `end` at the end")
+				fmt.Fprintf(os.Stderr, "%s: Error: expected `end`: '%s'.\n", progname, rawTokens[i].file)
+				os.Exit(1)
 			}
 			macros = append(macros, macroBuf)
 			continue
 
 		case "include":
 			if i + 1 >= len(rawTokens) {
-				panic("invalid syntax for include")
+				fmt.Fprintf(os.Stderr, "%s: Error: invalid syntax for include: %s: %d:%d.\n",
+					progname, rawTokens[i].file, rawTokens[i].line, rawTokens[i].offset)
+				os.Exit(1)
 			}
 			if rawTokens[i + 1].str[0] != '"' {
-				panic("include file must be wrapped with quotes")
+				fmt.Fprintf(os.Stderr, "%s: Error: included file must be wrapped with quotes: %s: %d:%d.\n",
+					progname, rawTokens[i].file, rawTokens[i].line, rawTokens[i].offset)
+				os.Exit(1)
 			}
 			if incDepth == incDepthLim {
-				panic("nested depth exceeds 200")
+				fmt.Fprintf(os.Stderr, "%s: Error: include depth exceeds 200: %s: %d:%d.\n",
+					progname, rawTokens[i].file)
+				os.Exit(1)
 			}
 
 			tmp := rawTokens[i + 1].str
@@ -212,8 +223,10 @@ func parse(tokens[]Token) []Operation {
 
 		case "push":
 			if i + 1 >= len(tokens) {
-				/* FIXME: Better error message */
-				panic("invalid push usage")
+				fmt.Fprintf(os.Stderr, "%s: Error: push expected variable: %s: %d: %d.\n",
+					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
+				os.Exit(1)
+
 			}
 			variableIndex := -1
 			for y := 0; y < len(variables); y++ {
@@ -222,19 +235,21 @@ func parse(tokens[]Token) []Operation {
 				}
 			}
 			if variableIndex == -1 {
-				panic("undeclared variable")
+				fmt.Fprintf(os.Stderr, "%s: Error: variable not declared '%s': %s: %d:%d.\n",
+					progname, tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
+				os.Exit(1)
 			}
 			op.name = "push"
 			op.strData = variables[variableIndex]
 			i++
-			/* FIXME: better solution */
 			ops = append(ops, op)
 			continue
 
 		case "pull":
 			if i + 1 >= len(tokens) {
-				/* FIXME: Better error message */
-				panic("invalid pull usage")
+				fmt.Fprintf(os.Stderr, "%s: Error: pull expected variable: %s: %d:%d.\n",
+					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
+				os.Exit(1)
 			}
 			variableIndex := -1
 			for y := 0; y < len(variables); y++ {
@@ -254,8 +269,9 @@ func parse(tokens[]Token) []Operation {
 
 		case "var":
 			if i + 1 >= len(tokens) {
-				/* FIXME: Better error message */
-				panic("invalid var usage")
+				fmt.Fprintf(os.Stderr, "%s: Error: var expected variable: %s: %d:%d.\n",
+					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
+				os.Exit(1)
 			}
 			op.name = "variable"
 			op.strData = tokens[i + 1].str
@@ -493,7 +509,6 @@ func mapX86_64linux(op Operation) string{
 		buf += "\tpush r10\n"
 
 	case "syscall":
-		/* FIXME: Consider making it more consise */
 		switch op.intData {
 		case 7:
 			buf += "\tpop rax\n"
@@ -583,14 +598,13 @@ func compile(ops[] Operation, w io.Writer) {
 func main() {
 	argv := os.Args;
 	argc := len(argv);
-	progname := argv[0]
+	progname = argv[0]
 	suffix := ".gorth"
 
 	if argc != 2 {
 		fmt.Fprintf(os.Stderr, "%s: Error: expected one input file.\n", progname)
 		os.Exit(1)
 	}
-
 	srcFile := argv[argc - 1]
 	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 7 {
 		fmt.Fprintf(os.Stderr, "%s: Error: invalid file format '%s'.\n", progname, srcFile)
@@ -604,8 +618,8 @@ func main() {
 	assemFile := srcFile[:len(srcFile) - 6] + ".s"
 	file, err := os.Create(assemFile)
 	if err != nil {
-		/* FIXME: better error message*/
 		fmt.Fprintf(os.Stderr, "%s: Error: failed create output file '%s'.\n", progname, file)
+		os.Exit(1)
 	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
