@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"regexp"
 	"slices"
 	"strconv"
@@ -604,7 +605,8 @@ func main() {
 	}
 
 	assemFile := srcFile[:len(srcFile) - 6] + ".s"
-	// binFile := srcFile[:len(srcFile) - 6]
+	objFile := srcFile[:len(srcFile) - 6] + ".o"
+	binFile := srcFile[:len(srcFile) - 6]
 	_, err := os.Stat(srcFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: error: %s.\n", progname, err)
@@ -625,4 +627,15 @@ func main() {
 	}
 	generateX86_64(ops, w)
 	w.Flush()
+
+	cmd := exec.Command("nasm", "-felf64", assemFile)
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: error: failed to create object file: %s.\n", progname, err)
+		os.Exit(1)
+	}
+	cmd = exec.Command("ld", "-o", binFile, objFile)
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: error: failed to link object file '%s': %s.\n", progname, objFile, err)
+		os.Exit(1)
+	}
 }
