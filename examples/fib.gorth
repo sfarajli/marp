@@ -12,3 +12,5 @@ define fib
 		1 -
 	done
 end
+
+10 fib
