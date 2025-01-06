@@ -1,17 +1,16 @@
 PREFIX ?= /usr/local
 
+ash: src/main.go
+	go build -o ash ./src
 
-gorth: src/main.go
-	go build -o gorth ./src
-
-install: gorth
+install: ash
 	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f gorth ${DESTDIR}${PREFIX}/bin
+	cp -f ash ${DESTDIR}${PREFIX}/bin
 
 uninstall:
-	rm -f ${DESTDIR}${PREFIX}/bin/gorth
+	rm -f ${DESTDIR}${PREFIX}/bin/ash
 
 clean:
-	rm -f gorth
+	rm -f ash
 
 .PHONY: test clean

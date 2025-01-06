@@ -1,3 +1,3 @@
-module gorth
+module ash
 
 go 1.23.3

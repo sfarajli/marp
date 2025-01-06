@@ -1,5 +1,5 @@
 # Prints out "Hello, World!"
 
-include "../lib/stdlib.gorth"
+include "../lib/std.ash"
 
 "Hello, World!" write

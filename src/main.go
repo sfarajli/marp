@@ -592,7 +592,7 @@ func main() {
 	argv := os.Args;
 	argc := len(argv);
 	progname = argv[0]
-	suffix := ".gorth"
+	suffix := ".ash"
 
 	if argc != 2 {
 		fmt.Fprintf(os.Stderr, "%s: error: expected one input file.\n", progname)
@@ -600,14 +600,14 @@ func main() {
 	}
 
 	srcFile := argv[argc - 1]
-	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 7 {
+	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 5 {
 		fmt.Fprintf(os.Stderr, "%s: error: invalid file format '%s'.\n", progname, srcFile)
 		os.Exit(1)
 	}
 
-	assemFile := srcFile[:len(srcFile) - 6] + ".s"
-	objFile := srcFile[:len(srcFile) - 6] + ".o"
-	binFile := srcFile[:len(srcFile) - 6]
+	binFile := srcFile[:len(srcFile) - 4]
+	assemFile := binFile + ".s"
+	objFile := binFile + ".o"
 	_, err := os.Stat(srcFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: error: %s.\n", progname, err)
