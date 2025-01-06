@@ -1,5 +1,5 @@
 + Add Memory access and variables
-- call nasm and ld from the binary
++ call nasm and ld from the binary
 - Add include directory
 + Handle recursive includes
 + write assembly to a file instead of stdout
