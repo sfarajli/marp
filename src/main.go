@@ -150,6 +150,7 @@ func preprocess(rawTokens[] Token) []Token {
 				tokens = append(tokens[:i], tokens[i + 1:]...)
 				tokens = slices.Insert(tokens, i, macros[y].tokens...)
 				i--
+				break;
 			}
 		}
 	}
