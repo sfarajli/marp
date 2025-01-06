@@ -242,8 +242,6 @@ func parse(tokens[]Token) []Operation {
 			op.name = "push"
 			op.strData = variables[variableIndex]
 			i++
-			ops = append(ops, op)
-			continue
 
 		case "pull":
 			if i + 1 >= len(tokens) {
@@ -263,9 +261,6 @@ func parse(tokens[]Token) []Operation {
 			op.name = "pull"
 			op.strData = variables[variableIndex]
 			i++
-			/* FIXME: better solution */
-			ops = append(ops, op)
-			continue
 
 		case "var":
 			if i + 1 >= len(tokens) {
@@ -277,9 +272,6 @@ func parse(tokens[]Token) []Operation {
 			op.strData = tokens[i + 1].str
 			variables = append(variables, tokens[i + 1].str)
 			i++
-			/* FIXME: better solution */
-			ops = append(ops, op)
-			continue
 		}
 
 		number, err := strconv.Atoi(tokens[i].str);
@@ -303,7 +295,6 @@ func parse(tokens[]Token) []Operation {
 			op.name = "syscall"
 			op.intData = parameters
 		}
-		/* FIXME: check for variable names that comes without push or pull */
 
 		if op.name ==  "" {
 			fmt.Fprintf(os.Stderr, "Undefined word `%s` %s: %d:%d\n", tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
