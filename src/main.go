@@ -39,7 +39,7 @@ func tokenize(path string) []Token {
 	reg := regexp.MustCompile(`\n`)
 	dat, err := os.ReadFile(path);
 	if (err != nil) {
-		fmt.Fprintf(os.Stderr, "%s: Error: failed read file '%s'.\n", progname, path)
+		fmt.Fprintf(os.Stderr, "%s: error: failed read file '%s'.\n", progname, path)
 		os.Exit(1)
 	}
 
@@ -77,7 +77,7 @@ func tokenize(path string) []Token {
 			buf = ""
 		}
 		if isStr {
-			fmt.Fprintf(os.Stderr, "%s: Error: expected `\"`: '%s'.\n", progname, path)
+			fmt.Fprintf(os.Stderr, "%s: error: expected `\"`: '%s'.\n", progname, path)
 			os.Exit(1)
 		}
 	}
@@ -94,7 +94,7 @@ func preprocess(rawTokens[] Token) []Token {
 		case "define":
 			var macroBuf Macro
 			if i + 1 >= len(rawTokens) {
-				fmt.Fprintf(os.Stderr, "%s: Error: invalid syntax for define: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: invalid syntax for define: %s: %d:%d.\n",
 					progname, rawTokens[i].file, rawTokens[i].line, rawTokens[i].offset)
 				os.Exit(1)
 			}
@@ -107,7 +107,7 @@ func preprocess(rawTokens[] Token) []Token {
 				macroBuf.tokens = append(macroBuf.tokens, rawTokens[i])
 			}
 			if i == len(rawTokens) {
-				fmt.Fprintf(os.Stderr, "%s: Error: expected `end`: '%s'.\n", progname, rawTokens[i].file)
+				fmt.Fprintf(os.Stderr, "%s: error: expected `end`: '%s'.\n", progname, rawTokens[i].file)
 				os.Exit(1)
 			}
 			macros = append(macros, macroBuf)
@@ -115,17 +115,17 @@ func preprocess(rawTokens[] Token) []Token {
 
 		case "include":
 			if i + 1 >= len(rawTokens) {
-				fmt.Fprintf(os.Stderr, "%s: Error: invalid syntax for include: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: invalid syntax for include: %s: %d:%d.\n",
 					progname, rawTokens[i].file, rawTokens[i].line, rawTokens[i].offset)
 				os.Exit(1)
 			}
 			if rawTokens[i + 1].str[0] != '"' {
-				fmt.Fprintf(os.Stderr, "%s: Error: included file must be wrapped with quotes: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: included file must be wrapped with quotes: %s: %d:%d.\n",
 					progname, rawTokens[i].file, rawTokens[i].line, rawTokens[i].offset)
 				os.Exit(1)
 			}
 			if incDepth == incDepthLim {
-				fmt.Fprintf(os.Stderr, "%s: Error: include depth exceeds 200: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: include depth exceeds 200: %s: %d:%d.\n",
 					progname, rawTokens[i].file)
 				os.Exit(1)
 			}
@@ -223,7 +223,7 @@ func parse(tokens[]Token) []Operation {
 
 		case "push":
 			if i + 1 >= len(tokens) {
-				fmt.Fprintf(os.Stderr, "%s: Error: push expected variable: %s: %d: %d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: push expected variable: %s: %d: %d.\n",
 					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
 				os.Exit(1)
 
@@ -235,7 +235,7 @@ func parse(tokens[]Token) []Operation {
 				}
 			}
 			if variableIndex == -1 {
-				fmt.Fprintf(os.Stderr, "%s: Error: variable not declared '%s': %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: variable not declared '%s': %s: %d:%d.\n",
 					progname, tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
 				os.Exit(1)
 			}
@@ -245,7 +245,7 @@ func parse(tokens[]Token) []Operation {
 
 		case "pull":
 			if i + 1 >= len(tokens) {
-				fmt.Fprintf(os.Stderr, "%s: Error: pull expected variable: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: pull expected variable: %s: %d:%d.\n",
 					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
 				os.Exit(1)
 			}
@@ -264,7 +264,7 @@ func parse(tokens[]Token) []Operation {
 
 		case "var":
 			if i + 1 >= len(tokens) {
-				fmt.Fprintf(os.Stderr, "%s: Error: var expected a variable: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: var expected a variable: %s: %d:%d.\n",
 					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
 				os.Exit(1)
 			}
@@ -593,23 +593,23 @@ func main() {
 	suffix := ".gorth"
 
 	if argc != 2 {
-		fmt.Fprintf(os.Stderr, "%s: Error: expected one input file.\n", progname)
+		fmt.Fprintf(os.Stderr, "%s: error: expected one input file.\n", progname)
 		os.Exit(1)
 	}
 	srcFile := argv[argc - 1]
 	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 7 {
-		fmt.Fprintf(os.Stderr, "%s: Error: invalid file format '%s'.\n", progname, srcFile)
+		fmt.Fprintf(os.Stderr, "%s: error: invalid file format '%s'.\n", progname, srcFile)
 		os.Exit(1)
 	}
 	_, err := os.Stat(srcFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: Error: failed to stat file '%s'.\n", progname, srcFile)
+		fmt.Fprintf(os.Stderr, "%s: error: failed to stat file '%s'.\n", progname, srcFile)
 		os.Exit(1)
 	}
 	assemFile := srcFile[:len(srcFile) - 6] + ".s"
 	file, err := os.Create(assemFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: Error: failed create output file '%s'.\n", progname, file)
+		fmt.Fprintf(os.Stderr, "%s: error: failed create output file '%s'.\n", progname, file)
 		os.Exit(1)
 	}
 	tokens := tokenize(argv[argc - 1])
