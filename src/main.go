@@ -1,14 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
-	"bufio"
-	"os"
-	"io"
-	"slices"
 )
 
 type Operation struct {
