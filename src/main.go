@@ -264,7 +264,7 @@ func parse(tokens[]Token) []Operation {
 
 		case "var":
 			if i + 1 >= len(tokens) {
-				fmt.Fprintf(os.Stderr, "%s: Error: var expected variable: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: Error: var expected a variable: %s: %d:%d.\n",
 					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
 				os.Exit(1)
 			}
