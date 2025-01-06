@@ -596,27 +596,33 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s: error: expected one input file.\n", progname)
 		os.Exit(1)
 	}
+
 	srcFile := argv[argc - 1]
 	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 7 {
 		fmt.Fprintf(os.Stderr, "%s: error: invalid file format '%s'.\n", progname, srcFile)
 		os.Exit(1)
 	}
+
+	assemFile := srcFile[:len(srcFile) - 6] + ".s"
+	// binFile := srcFile[:len(srcFile) - 6]
 	_, err := os.Stat(srcFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: error: %s.\n", progname, err)
 		os.Exit(1)
 	}
-	assemFile := srcFile[:len(srcFile) - 6] + ".s"
 	file, err := os.Create(assemFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: error: failed create output file '%s'.\n", progname, file)
+		fmt.Fprintf(os.Stderr, "%s: error: %s.\n", progname, err)
 		os.Exit(1)
 	}
 	tokens := tokenize(argv[argc - 1])
 	tokens = preprocess(tokens)
 	ops := parse(tokens)
-	/* FIXME: check for error */
 	w := bufio.NewWriter(file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: error: %s.\n", progname, err)
+		os.Exit(1)
+	}
 	generateX86_64(ops, w)
 	w.Flush()
 }
