@@ -1,7 +1,18 @@
-# gorth - go forth
-Simple [forth](https://www.forth.com/forth) compiler implementation written in go.
+# ash
+A Simple stack based programming language inspired by [forth](https://www.forth.com/forth) and posix shell syntax.
 
 ## Building
 ``` bash
-go build -o gorth ./src
+make
 ```
+## Installing
+``` bash
+make install
+```
+
+## Dependencies
+* [nasm](https://www.nasm.us/)
+* ld
+
+## OS
+ash only supports linux.
