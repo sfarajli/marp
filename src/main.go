@@ -223,47 +223,6 @@ func parse(tokens[]Token) []Operation {
 			op.label = fmt.Sprintf(".done%d", looplabels[len(looplabels) - 1])
 			looplabels = looplabels[:len(looplabels) - 1]
 
-		case "push":
-			if i + 1 >= len(tokens) {
-				fmt.Fprintf(os.Stderr, "%s: error: push expected variable: %s: %d: %d.\n",
-					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
-				os.Exit(1)
-
-			}
-			variableIndex := -1
-			for y := 0; y < len(variables); y++ {
-				if tokens[i + 1].str == variables[y] {
-					variableIndex = y
-				}
-			}
-			if variableIndex == -1 {
-				fmt.Fprintf(os.Stderr, "%s: error: variable not declared '%s': %s: %d:%d.\n",
-					progname, tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
-				os.Exit(1)
-			}
-			op.name = "push"
-			op.strData = variables[variableIndex]
-			i++
-
-		case "pull":
-			if i + 1 >= len(tokens) {
-				fmt.Fprintf(os.Stderr, "%s: error: pull expected variable: %s: %d:%d.\n",
-					progname, tokens[i].file, tokens[i].line, tokens[i].offset)
-				os.Exit(1)
-			}
-			variableIndex := -1
-			for y := 0; y < len(variables); y++ {
-				if tokens[i + 1].str == variables[y] {
-					variableIndex = y
-				}
-			}
-			if variableIndex == -1 {
-				panic("undeclared variable")
-			}
-			op.name = "pull"
-			op.strData = variables[variableIndex]
-			i++
-
 		case "var":
 			if i + 1 >= len(tokens) {
 				fmt.Fprintf(os.Stderr, "%s: error: var expected a variable: %s: %d:%d.\n",
@@ -286,6 +245,31 @@ func parse(tokens[]Token) []Operation {
 			op.intData = len(tokens[i].str) - 2 /* -2 for removing `"` at the beginning and at the end */
 			op.label = fmt.Sprintf("string_%d", stringlabel)
 			stringlabel++
+		} else if tokens[i].str[0] == '!' || tokens[i].str[0] == '@' {
+			if len(tokens[i].str) < 2 {
+				fmt.Fprintf(os.Stderr, "%s: error: expected variable after `%s`: %s: %d: %d.\n",
+					progname, tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
+				os.Exit(1)
+			}
+			variable := tokens[i].str[1:]
+			variableIndex := -1
+			for y := 0; y < len(variables); y++ {
+				if variable == variables[y] {
+					variableIndex = y
+				}
+			}
+			if variableIndex == -1 {
+				fmt.Fprintf(os.Stderr, "%s: error: variable not declared `%s`: %s: %d:%d.\n",
+					progname, variable, tokens[i].file, tokens[i].line, tokens[i].offset)
+				os.Exit(1)
+			}
+
+			if tokens[i].str[0] == '!' {
+				op.name = "push"
+			} else {
+				op.name = "pull"
+			}
+			op.strData = variable
 		} else if len(tokens[i].str) == 9 && tokens[i].str[:8] == "syscall." {
 			parameters, err := strconv.Atoi(string(tokens[i].str[8]))
 			if err != nil {
@@ -302,7 +286,6 @@ func parse(tokens[]Token) []Operation {
 			fmt.Fprintf(os.Stderr, "Undefined word `%s` %s: %d:%d\n", tokens[i].str, tokens[i].file, tokens[i].line, tokens[i].offset)
 			os.Exit(1)
 		}
-
 		ops = append(ops, op)
 	}
 	return ops
