@@ -126,7 +126,7 @@ func preprocess(rawTokens[] Token) []Token {
 				os.Exit(1)
 			}
 			if incDepth == incDepthLim {
-				fmt.Fprintf(os.Stderr, "%s: error: include depth exceeds 200: %s: %d:%d.\n",
+				fmt.Fprintf(os.Stderr, "%s: error: include depth exceeds 200: %s.\n",
 					progname, rawTokens[i].file)
 				os.Exit(1)
 			}
