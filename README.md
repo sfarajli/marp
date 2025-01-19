@@ -1,4 +1,4 @@
-# ash
+# marp
 A Simple stack based programming language inspired by [forth](https://www.forth.com/forth) and posix shell syntax.
 
 ## Building
@@ -15,4 +15,4 @@ make install
 * ld
 
 ## OS
-ash only supports linux.
+marp only supports linux.

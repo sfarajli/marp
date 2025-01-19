@@ -1,5 +1,5 @@
 # Prints out "Hello, World!"
 
-include "../lib/std.ash"
+include "../lib/std.marp"
 
 "Hello, World!" write

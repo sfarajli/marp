@@ -1,16 +1,17 @@
 PREFIX ?= /usr/local
 
-ash: src/main.go
-	go build -o ash ./src
+marp: src/main.go
+	go build -o marp ./src
 
-install: ash
+install: marp
 	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f ash ${DESTDIR}${PREFIX}/bin
+	cp -f marp ${DESTDIR}${PREFIX}/bin
+	cp -f lib/std.marp ${DESTDIR}${PREFIX}/bin
 
 uninstall:
-	rm -f ${DESTDIR}${PREFIX}/bin/ash
+	rm -f ${DESTDIR}${PREFIX}/bin/marp
 
 clean:
-	rm -f ash
+	rm -f marp
 
 .PHONY: test clean

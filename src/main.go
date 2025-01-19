@@ -575,7 +575,8 @@ func main() {
 	argv := os.Args;
 	argc := len(argv);
 	progname = argv[0]
-	suffix := ".ash"
+	suffix := ".marp"
+	sufLen := len(suffix)
 
 	if argc != 2 {
 		fmt.Fprintf(os.Stderr, "%s: error: expected one input file.\n", progname)
@@ -583,12 +584,12 @@ func main() {
 	}
 
 	srcFile := argv[argc - 1]
-	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) < 5 {
-		fmt.Fprintf(os.Stderr, "%s: error: invalid file format '%s'.\n", progname, srcFile)
+	if !strings.HasSuffix(srcFile, suffix) || len(srcFile) <= sufLen {
+		fmt.Fprintf(os.Stderr, "%s: error: invalid file name '%s'.\n", progname, srcFile)
 		os.Exit(1)
 	}
 
-	binFile := srcFile[:len(srcFile) - 4]
+	binFile := srcFile[:len(srcFile) - sufLen]
 	assemFile := binFile + ".s"
 	objFile := binFile + ".o"
 	_, err := os.Stat(srcFile)
