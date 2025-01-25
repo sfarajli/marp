@@ -1,4 +1,5 @@
 - Add array
+- Add char type
 + Add Memory access and variables
 + call nasm and ld from the binary
 - Add include directory
