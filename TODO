@@ -1,6 +1,7 @@
 - Bootstrap (write language in itself)
 - Add array
 - Add char type
+- Add arm support
 + Add Memory access and variables
 + call nasm and ld from the binary
 - Add include directory
