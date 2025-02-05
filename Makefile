@@ -1,3 +1,5 @@
+.POSIX:
+
 PREFIX ?= /usr/local
 
 marp: src/main.go
