@@ -16,4 +16,4 @@ uninstall:
 clean:
 	rm -f marp
 
-.PHONY: test clean
+.PHONY: clean
